@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <!-- Constelação "42" -->
+  <g stroke="#FFFFFF" stroke-opacity="0.45" stroke-width="5" stroke-linecap="round" fill="none">
+    <path d="M760 205 L712 275 L782 275 M760 205 L760 310"/>
+    <path d="M805 220 L835 205 L860 230 L805 310 L865 310"/>
+  </g>
+  <g fill="#FFFFFF">
+    <circle cx="760" cy="205" r="9"/>
+    <circle cx="712" cy="275" r="7"/>
+    <circle cx="782" cy="275" r="7"/>
+    <circle cx="760" cy="310" r="8"/>
+    <circle cx="805" cy="220" r="7"/>
+    <circle cx="835" cy="205" r="8"/>
+    <circle cx="860" cy="230" r="7"/>
+    <circle cx="805" cy="310" r="8"/>
+    <circle cx="865" cy="310" r="9"/>
+  </g>
+  <!-- Estrelas soltas -->
+  <g fill="#FFFFFF">
+    <circle cx="170" cy="210" r="7" fill-opacity="0.9"/>
+    <circle cx="300" cy="150" r="4" fill-opacity="0.6"/>
+    <circle cx="430" cy="240" r="5" fill-opacity="0.7"/>
+    <circle cx="250" cy="320" r="3" fill-opacity="0.5"/>
+    <circle cx="560" cy="180" r="4" fill-opacity="0.6"/>
+    <circle cx="120" cy="760" r="5" fill-opacity="0.7"/>
+    <circle cx="290" cy="860" r="6" fill-opacity="0.8"/>
+    <circle cx="480" cy="800" r="4" fill-opacity="0.6"/>
+    <circle cx="520" cy="900" r="3" fill-opacity="0.5"/>
+    <circle cx="700" cy="790" r="5" fill-opacity="0.8"/>
+    <circle cx="860" cy="700" r="6" fill-opacity="0.7"/>
+    <circle cx="905" cy="520" r="4" fill-opacity="0.6"/>
+    <circle cx="880" cy="860" r="4" fill-opacity="0.5"/>
+    <circle cx="400" cy="700" r="3" fill-opacity="0.5"/>
+  </g>
+</svg>
