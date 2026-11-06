@@ -17,7 +17,8 @@ enum TextInserter {
         pasteboard.writeObjects([item])
         let ourChangeCount = pasteboard.changeCount
 
-        postCommandV()
+        // Só cola: nunca envia Enter.
+        postShortcut(CGKeyCode(kVK_ANSI_V), flags: .maskCommand)
 
         // Dá tempo para o app de destino ler a área de transferência antes de restaurá-la.
         try? await Task.sleep(for: .milliseconds(350))
@@ -32,13 +33,11 @@ enum TextInserter {
         pasteboard.setString(text, forType: .string)
     }
 
-    /// Só cola: nunca envia Enter.
-    private static func postCommandV() {
+    static func postShortcut(_ keyCode: CGKeyCode, flags: CGEventFlags) {
         let source = CGEventSource(stateID: .hidSystemState)
-        let keyCode = CGKeyCode(kVK_ANSI_V)
         for keyDown in [true, false] {
             let event = CGEvent(keyboardEventSource: source, virtualKey: keyCode, keyDown: keyDown)
-            event?.flags = .maskCommand
+            event?.flags = flags
             event?.post(tap: .cghidEventTap)
         }
     }

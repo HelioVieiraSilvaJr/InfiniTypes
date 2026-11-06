@@ -1,11 +1,12 @@
 import AppKit
 import ApplicationServices
 
-/// Onde o ditado aconteceu: app em foco e título da janela.
+/// Onde o ditado aconteceu: app em foco, título da janela e, se o glossário reconhecer, o projeto.
 nonisolated struct DictationContext: Sendable, Equatable {
     var appName: String?
     var bundleID: String?
     var windowTitle: String?
+    var projectName: String?
 
     static let empty = DictationContext()
 }
@@ -13,14 +14,15 @@ nonisolated struct DictationContext: Sendable, Equatable {
 enum ContextCollector {
     static func capture() -> DictationContext {
         guard let app = NSWorkspace.shared.frontmostApplication else { return .empty }
+        return DictationContext(appName: app.localizedName, bundleID: app.bundleIdentifier,
+                                windowTitle: windowTitle(of: app))
+    }
+
+    static func windowTitle(of app: NSRunningApplication) -> String? {
         let appElement = AXUIElementCreateApplication(app.processIdentifier)
         let window = AX.element(appElement, kAXFocusedWindowAttribute)
         let title = window.flatMap { AX.string($0, kAXTitleAttribute) }
-        return DictationContext(
-            appName: app.localizedName,
-            bundleID: app.bundleIdentifier,
-            windowTitle: title?.isEmpty == false ? title : nil
-        )
+        return title?.isEmpty == false ? title : nil
     }
 }
 

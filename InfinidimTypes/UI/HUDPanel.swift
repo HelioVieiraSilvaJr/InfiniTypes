@@ -4,7 +4,7 @@ import SwiftUI
 
 enum HUDState: Equatable {
     case hidden
-    case recording
+    case recording(String)
     case working(String)
     case success(String)
     case notice(String)
@@ -100,7 +100,7 @@ private struct HUDView: View {
             Text(message)
                 .font(.system(size: 13, weight: .medium))
                 .lineLimit(2)
-            if model.state == .recording {
+            if case .recording = model.state {
                 LevelMeter(level: model.level)
             }
         }
@@ -130,8 +130,7 @@ private struct HUDView: View {
 
     private var message: String {
         switch model.state {
-        case .recording: "Ouvindo…"
-        case .working(let text), .success(let text), .notice(let text), .failure(let text): text
+        case .recording(let text), .working(let text), .success(let text), .notice(let text), .failure(let text): text
         case .hidden: ""
         }
     }

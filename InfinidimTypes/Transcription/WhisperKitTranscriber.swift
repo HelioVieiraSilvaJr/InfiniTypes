@@ -34,21 +34,23 @@ final class WhisperKitTranscriber: Transcriber {
         loadTask = Task { try await load() }
     }
 
-    func transcribe(_ samples: [Float]) async throws -> String {
+    func transcribe(_ samples: [Float], vocabulary: [String]) async throws -> String {
         let pipe = try await readyPipe()
-        let results = try await pipe.transcribe(audioArray: samples, decodeOptions: Self.decodingOptions)
+        let options = Self.decodingOptions(vocabulary: vocabulary, tokenizer: pipe.tokenizer)
+        let results = try await pipe.transcribe(audioArray: samples, decodeOptions: options)
         return Self.joined(results)
     }
 
     /// Transcreve um arquivo de áudio em qualquer formato que o AVFoundation leia.
-    func transcribe(fileAt path: String) async throws -> String {
+    func transcribe(fileAt path: String, vocabulary: [String]) async throws -> String {
         let pipe = try await readyPipe()
-        let results = try await pipe.transcribe(audioPath: path, decodeOptions: Self.decodingOptions)
+        let options = Self.decodingOptions(vocabulary: vocabulary, tokenizer: pipe.tokenizer)
+        let results = try await pipe.transcribe(audioPath: path, decodeOptions: options)
         return Self.joined(results)
     }
 
-    private static var decodingOptions: DecodingOptions {
-        DecodingOptions(
+    private static func decodingOptions(vocabulary: [String], tokenizer: (any WhisperTokenizer)?) -> DecodingOptions {
+        var options = DecodingOptions(
             task: .transcribe,
             // Fixo em português: a detecção automática tende a trocar para inglês com muitos termos técnicos.
             language: "pt",
@@ -59,6 +61,17 @@ final class WhisperKitTranscriber: Transcriber {
             withoutTimestamps: true,
             chunkingStrategy: .vad
         )
+        options.promptTokens = promptTokens(for: vocabulary, tokenizer: tokenizer)
+        return options
+    }
+
+    /// O glossário vira o "texto anterior" do Whisper, o que puxa o reconhecimento para essas grafias.
+    /// O contexto do modelo aceita ~224 tokens; o glossário usa no máximo 150.
+    private static func promptTokens(for vocabulary: [String], tokenizer: (any WhisperTokenizer)?) -> [Int]? {
+        guard let tokenizer, !vocabulary.isEmpty else { return nil }
+        let text = " " + vocabulary.joined(separator: ", ") + "."
+        let tokens = tokenizer.encode(text: text).filter { $0 < tokenizer.specialTokens.specialTokenBegin }
+        return Array(tokens.prefix(150))
     }
 
     private static func joined(_ results: [TranscriptionResult]) -> String {

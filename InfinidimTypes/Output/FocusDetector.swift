@@ -11,15 +11,37 @@ enum FocusResult: String {
 
 /// Decide se há um campo de texto em foco para receber o ⌘V.
 enum FocusDetector {
-    /// Terminais e editores sempre têm onde colar, mesmo quando a Accessibility responde mal
-    /// (apps Electron e terminais expõem o foco de forma irregular).
-    static let alwaysEditableBundleIDs: Set<String> = [
+    /// Nos terminais, colar acrescenta no cursor: uma seleção feita com o mouse não é substituída.
+    static let terminalBundleIDs: Set<String> = [
         "com.apple.Terminal",
         "com.googlecode.iterm2",
         "com.mitchellh.ghostty",
         "dev.warp.Warp-Stable",
         "net.kovidgoyal.kitty",
         "io.alacritty",
+    ]
+
+    static var frontmostIsTerminal: Bool {
+        NSWorkspace.shared.frontmostApplication?.bundleIdentifier.map(terminalBundleIDs.contains) ?? false
+    }
+
+    /// Apps que desenham o próprio documento e não mostram a seleção à Accessibility, mas em que um ⌘C
+    /// sem seleção não copia nada. Neles, um ⌘C revela com segurança se há texto selecionado.
+    /// (No VS Code e no Cursor, ⌘C sem seleção copia a linha inteira, por isso ficam de fora.)
+    static let selectionHiddenFromAccessibility: Set<String> = [
+        "com.apple.iWork.Pages",
+        "com.apple.iWork.Keynote",
+        "com.apple.iWork.Numbers",
+        "com.microsoft.Word",
+    ]
+
+    static var frontmostHidesSelection: Bool {
+        NSWorkspace.shared.frontmostApplication?.bundleIdentifier.map(selectionHiddenFromAccessibility.contains) ?? false
+    }
+
+    /// Terminais e editores sempre têm onde colar, mesmo quando a Accessibility responde mal
+    /// (apps Electron e terminais expõem o foco de forma irregular).
+    static let alwaysEditableBundleIDs: Set<String> = terminalBundleIDs.union([
         "com.microsoft.VSCode",
         "com.microsoft.VSCodeInsiders",
         "com.todesktop.230313mzl4w4u92", // Cursor
@@ -29,7 +51,7 @@ enum FocusDetector {
         "com.jetbrains.intellij",
         "com.jetbrains.WebStorm",
         "com.jetbrains.pycharm",
-    ]
+    ])
 
     static let editableRoles: Set<String> = [
         kAXTextFieldRole, kAXTextAreaRole, kAXComboBoxRole, "AXSearchField",

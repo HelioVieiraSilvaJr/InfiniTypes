@@ -21,11 +21,24 @@ final class DictationRecord {
     var refinementSeconds: Double?
     var inputTokens: Int?
     var outputTokens: Int?
+    /// `DictationMode` em texto; ditados anteriores ao modo literal ficam `nil` (modo prompt).
+    var modeRaw: String?
+    var projectName: String?
+    /// Na revisão: o texto que estava selecionado antes de ser substituído.
+    var originalText: String?
+    /// Marcado no histórico para entrar no conjunto de avaliação do refinador.
+    var inEvalSet: Bool = false
+
+    var mode: DictationMode { modeRaw.flatMap(DictationMode.init(rawValue:)) ?? .prompt }
 
     init(createdAt: Date = .now, text: String, rawTranscript: String, context: DictationContext,
-         modelID: String?, refined: Bool, errorMessage: String?, audioSeconds: Double,
-         transcriptionSeconds: Double, refinementSeconds: Double?, inputTokens: Int?, outputTokens: Int?) {
+         mode: DictationMode, originalText: String? = nil, modelID: String?, refined: Bool, errorMessage: String?,
+         audioSeconds: Double, transcriptionSeconds: Double, refinementSeconds: Double?,
+         inputTokens: Int?, outputTokens: Int?) {
         self.createdAt = createdAt
+        self.modeRaw = mode.rawValue
+        self.originalText = originalText
+        self.projectName = context.projectName
         self.text = text
         self.rawTranscript = rawTranscript
         self.appName = context.appName

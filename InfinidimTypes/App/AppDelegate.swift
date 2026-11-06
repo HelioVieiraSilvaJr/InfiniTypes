@@ -9,13 +9,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let models = AvailableModels()
     let transcriber = WhisperKitTranscriber()
     let history = HistoryStore()
+    let glossary = GlossaryStore()
     private let activity = AppActivityTracker()
     private let hud = HUDController()
     private let windows = WindowPresenter()
     private let hotkey = HotkeyMonitor()
 
     private lazy var coordinator = DictationCoordinator(
-        permissions: permissions, settings: settings, transcriber: transcriber,
+        permissions: permissions, settings: settings, glossary: glossary, transcriber: transcriber,
         refiner: ClaudeRefiner(settings: settings), history: history, hud: hud
     )
 
@@ -33,7 +34,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
 
         coordinator.onNeedsPermissions = { [weak self] in self?.showOnboarding() }
-        hotkey.onPress = { [weak self] in self?.coordinator.startRecording() }
+        hotkey.onPress = { [weak self] mode in self?.coordinator.startRecording(mode: mode) }
         hotkey.onRelease = { [weak self] in self?.coordinator.finishRecording() }
         hotkey.onCancel = { [weak self] in self?.coordinator.cancelRecording() }
         hotkey.start()
@@ -49,7 +50,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         #if DEBUG
         if let path = UserDefaults.standard.string(forKey: "transcribeFile") {
-            Task { await coordinator.debugProcessFile(at: path) }
+            let mode: DictationMode = UserDefaults.standard.bool(forKey: "literal") ? .literal : .prompt
+            let selectionFile = UserDefaults.standard.string(forKey: "reviseFile")
+            let glossary = UserDefaults.standard.string(forKey: "glossaryFile").flatMap {
+                try? JSONDecoder().decode(Glossary.self, from: Data(contentsOf: URL(fileURLWithPath: $0)))
+            }
+            Task {
+                await coordinator.debugProcessFile(at: path, mode: mode, selectionFile: selectionFile, glossary: glossary)
+            }
         }
         #endif
     }
@@ -72,15 +80,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func showSettings() {
+        let windowTitle = activity.lastExternalApp.flatMap(ContextCollector.windowTitle(of:))
         windows.show(id: "settings", title: "Preferências do InfinidimTypes") {
-            SettingsView(settings: settings, models: models, transcriber: transcriber)
+            SettingsView(settings: settings, models: models, transcriber: transcriber,
+                         glossary: glossary, currentWindowTitle: windowTitle)
         }
     }
 
     func showHistory() {
         windows.show(id: "history", title: "Histórico do InfinidimTypes", defaultSize: NSSize(width: 880, height: 560)) {
-            HistoryView(activity: activity, onPaste: paste(_:into:), onDelete: { [history] in history.delete($0) })
+            HistoryView(activity: activity, onPaste: paste(_:into:), onDelete: { [history] in history.delete($0) },
+                        onExportEval: exportEval)
                 .modelContainer(history.container)
+        }
+    }
+
+    private func exportEval(_ records: [DictationRecord]) {
+        do {
+            let url = try EvalExporter.export(records)
+            NSWorkspace.shared.activateFileViewerSelecting([url])
+        } catch {
+            hud.show(.failure("Falha ao exportar a avaliação: \(error.localizedDescription)"))
         }
     }
 

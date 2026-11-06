@@ -20,10 +20,22 @@ struct AnthropicClient {
         /// `"default"`: se o modelo recusar, a API tenta de novo no modelo que a Anthropic recomenda.
         var fallbacks: String?
 
+        // Chaves explícitas: o esquema JSON em `OutputConfig.format` precisa manter as dele como estão.
+        enum CodingKeys: String, CodingKey {
+            case model, system, messages, fallbacks
+            case maxTokens = "max_tokens"
+            case outputConfig = "output_config"
+        }
+
         struct SystemBlock: Encodable, Equatable {
             var type = "text"
             var text: String
             var cacheControl: CacheControl?
+
+            enum CodingKeys: String, CodingKey {
+                case type, text
+                case cacheControl = "cache_control"
+            }
         }
 
         struct CacheControl: Encodable, Equatable {
@@ -36,7 +48,14 @@ struct AnthropicClient {
         }
 
         struct OutputConfig: Encodable, Equatable {
-            var effort: String
+            var effort: String?
+            /// Saída estruturada: a resposta segue o esquema JSON.
+            var format: Format?
+        }
+
+        struct Format: Encodable, Equatable {
+            var type = "json_schema"
+            var schema: JSONValue
         }
     }
 
@@ -61,9 +80,9 @@ struct AnthropicClient {
         }
     }
 
-    func createMessage(_ body: MessageRequest) async throws -> MessageResponse {
+    func createMessage(_ body: MessageRequest, timeout: TimeInterval = 45) async throws -> MessageResponse {
         var request = makeRequest(path: "messages", method: "POST")
-        request.timeoutInterval = 45
+        request.timeoutInterval = timeout
         if body.fallbacks != nil {
             request.setValue(Self.fallbackBeta, forHTTPHeaderField: "anthropic-beta")
         }
@@ -99,11 +118,7 @@ struct AnthropicClient {
 
     // MARK: Transporte
 
-    static let encoder: JSONEncoder = {
-        let encoder = JSONEncoder()
-        encoder.keyEncodingStrategy = .convertToSnakeCase
-        return encoder
-    }()
+    static let encoder = JSONEncoder()
 
     private static let decoder: JSONDecoder = {
         let decoder = JSONDecoder()

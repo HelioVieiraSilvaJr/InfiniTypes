@@ -6,10 +6,14 @@ struct HistoryView: View {
     let activity: AppActivityTracker
     let onPaste: (String, NSRunningApplication) -> Void
     let onDelete: (DictationRecord) -> Void
+    let onExportEval: ([DictationRecord]) -> Void
 
+    @Environment(\.modelContext) private var modelContext
     @Query(sort: \DictationRecord.createdAt, order: .reverse) private var records: [DictationRecord]
     @State private var selection: PersistentIdentifier?
     @State private var search = ""
+
+    private var evalRecords: [DictationRecord] { records.filter(\.inEvalSet) }
 
     private var filtered: [DictationRecord] {
         guard !search.isEmpty else { return records }
@@ -32,6 +36,9 @@ struct HistoryView: View {
                                 .tag(record.persistentModelID)
                                 .contextMenu {
                                     Button("Copiar") { TextInserter.copy(record.text) }
+                                    Button(record.inEvalSet ? "Tirar da avaliação" : "Usar na avaliação") {
+                                        toggleEval(record)
+                                    }
                                     Button("Apagar", role: .destructive) { delete(record) }
                                 }
                         }
@@ -53,9 +60,20 @@ struct HistoryView: View {
         } detail: {
             if let selected {
                 HistoryDetail(record: selected, previousApp: activity.lastExternalApp,
-                              onPaste: onPaste, onDelete: { delete(selected) })
+                              onPaste: onPaste, onToggleEval: { toggleEval(selected) },
+                              onDelete: { delete(selected) })
             } else {
                 ContentUnavailableView("Selecione um ditado", systemImage: "text.bubble")
+            }
+        }
+        .toolbar {
+            ToolbarItem {
+                Button("Exportar avaliação (\(evalRecords.count))", systemImage: "square.and.arrow.up") {
+                    onExportEval(evalRecords)
+                }
+                .labelStyle(.titleAndIcon)
+                .disabled(evalRecords.isEmpty)
+                .help("Salva os ditados marcados com estrela em um arquivo JSONL para avaliar o refinador")
             }
         }
         .onAppear {
@@ -66,6 +84,11 @@ struct HistoryView: View {
     private func delete(_ record: DictationRecord) {
         if record.persistentModelID == selection { selection = nil }
         onDelete(record)
+    }
+
+    private func toggleEval(_ record: DictationRecord) {
+        record.inEvalSet.toggle()
+        try? modelContext.save()
     }
 }
 
@@ -80,7 +103,17 @@ private struct HistoryRow: View {
                 if let app = record.appName {
                     Text(app)
                 }
+                if record.mode != .prompt {
+                    Text(record.mode.label)
+                        .padding(.horizontal, 5)
+                        .background(.quaternary, in: Capsule())
+                }
                 Spacer()
+                if record.inEvalSet {
+                    Image(systemName: "star.fill")
+                        .foregroundStyle(.yellow)
+                        .help("Marcado para a avaliação")
+                }
                 if !record.pasted {
                     Image(systemName: "tray.full.fill")
                         .foregroundStyle(.orange)
@@ -107,12 +140,29 @@ private struct HistoryDetail: View {
     let record: DictationRecord
     let previousApp: NSRunningApplication?
     let onPaste: (String, NSRunningApplication) -> Void
+    let onToggleEval: () -> Void
     let onDelete: () -> Void
 
-    @State private var showRaw = false
+    private enum Version: Hashable {
+        case result, speech, original
+    }
+
+    @State private var version: Version = .result
     @State private var copied = false
 
-    private var displayedText: String { showRaw ? record.rawTranscript : record.text }
+    private var versions: [(Version, String)] {
+        record.originalText == nil
+            ? [(.result, "Resultado"), (.speech, "Transcrição bruta")]
+            : [(.result, "Revisado"), (.speech, "Fala"), (.original, "Original")]
+    }
+
+    private var displayedText: String {
+        switch version {
+        case .result: record.text
+        case .speech: record.rawTranscript
+        case .original: record.originalText ?? record.text
+        }
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -138,9 +188,19 @@ private struct HistoryDetail: View {
             Divider()
 
             HStack {
-                Toggle("Mostrar transcrição bruta", isOn: $showRaw)
-                    .toggleStyle(.checkbox)
+                Picker("Versão", selection: $version) {
+                    ForEach(versions, id: \.0) { version, label in
+                        Text(label).tag(version)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .fixedSize()
                 Spacer()
+                Button(action: onToggleEval) {
+                    Image(systemName: record.inEvalSet ? "star.fill" : "star")
+                }
+                .help(record.inEvalSet ? "Tirar da avaliação" : "Usar na avaliação do refinador")
                 Button("Apagar", role: .destructive, action: onDelete)
                 if let previousApp {
                     Button("Colar em \(previousApp.localizedName ?? "app anterior")") {
@@ -156,17 +216,20 @@ private struct HistoryDetail: View {
             .padding()
         }
         .onChange(of: record.persistentModelID) {
-            showRaw = false
+            version = .result
             copied = false
         }
     }
 
     private var summary: String {
         var parts: [String] = []
+        if record.mode != .prompt {
+            parts.append("Modo \(record.mode.label.lowercased())")
+        }
         if record.pasted {
             parts.append("Colado em \(record.appName ?? "app desconhecido")")
         } else {
-            parts.append("Não colado: nenhum campo de texto em foco")
+            parts.append("Não colado")
         }
         if record.refined {
             let model = record.modelID.map { ModelCatalog.model(id: $0).displayName } ?? "Claude"

@@ -1,6 +1,25 @@
 import SwiftUI
 
 struct SettingsView: View {
+    let settings: AppSettings
+    let models: AvailableModels
+    let transcriber: WhisperKitTranscriber
+    let glossary: GlossaryStore
+    /// Título da janela em que você estava, para ajudar a nomear projetos no glossário.
+    let currentWindowTitle: String?
+
+    var body: some View {
+        TabView {
+            GeneralSettingsView(settings: settings, models: models, transcriber: transcriber)
+                .tabItem { Label("Geral", systemImage: "gearshape") }
+            GlossarySettingsView(store: glossary, currentWindowTitle: currentWindowTitle)
+                .tabItem { Label("Glossário", systemImage: "character.book.closed") }
+        }
+        .frame(width: 580, height: 620)
+    }
+}
+
+private struct GeneralSettingsView: View {
     @Bindable var settings: AppSettings
     let models: AvailableModels
     let transcriber: WhisperKitTranscriber
@@ -73,14 +92,14 @@ struct SettingsView: View {
             }
 
             Section("Ditado") {
-                LabeledContent("Atalho", value: "Segure o ⌥ direito")
-                LabeledContent("Cancelar", value: "Outra tecla enquanto segura o ⌥")
+                LabeledContent("Prompt", value: "Segure o ⌥ direito")
+                LabeledContent("Literal (só limpa)", value: "Segure o ⌘ direito")
+                LabeledContent("Revisar seleção", value: "Toque e segure o ⌥ direito")
+                LabeledContent("Cancelar", value: "Outra tecla enquanto segura")
                 LabeledContent("Modelo de voz", value: transcriber.state.label)
             }
         }
         .formStyle(.grouped)
-        .frame(width: 540)
-        .fixedSize(horizontal: false, vertical: true)
     }
 
     private func saveKey() async {

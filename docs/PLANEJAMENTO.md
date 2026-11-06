@@ -39,9 +39,9 @@ Inspirado nos princípios de ferramentas de ditado com IA, mas com outro objetiv
 |---|---|---|
 | Ditar prompt (push-to-talk) | Segurar ⌥ direito | 1 |
 | Cancelar ditado em andamento | Qualquer outra tecla (ex.: Esc) enquanto segura o ⌥ | 1 |
-| Modo mãos-livres (ditados longos) | Toque duplo no ⌥ direito; toque de novo para encerrar | 3 |
-| Modo literal (só limpa, não reestrutura) | A definir | 2 |
-| Editar seleção por voz ("resume", "deixa mais direto") | A definir | 3 |
+| Modo literal (só limpa, não reestrutura) | Segurar ⌘ direito | 2 ✅ |
+| Revisar o texto selecionado por voz | Toque rápido e segurar o ⌥ direito | ✅ |
+| Modo mãos-livres (ditados longos) | A definir (o toque duplo passou para a revisão) | 3 |
 | Abrir o histórico | Pelo menu ou atalho global (a definir) | 1 |
 | Colar o último resultado de novo | Pelo menu ou atalho | 1 |
 
@@ -144,6 +144,22 @@ idle ──(⌥ pressionado)──▶ recording ──(⌥ solto)──▶ trans
   - Ações: **Copiar** (⌘C ou Enter), colar no app anterior, apagar.
   - Itens que não chegaram a ser colados ficam destacados.
 - Os registros também servem para **calibrar o system prompt com exemplos reais**.
+- Na revisão, o detalhe alterna entre **Revisado**, **Fala** e **Original**.
+
+### 3.9 Revisão do texto selecionado
+Você seleciona um texto já escrito (um prompt colado, por exemplo), dá um toque rápido no ⌥ direito, segura e dita o que falta ou o que corrigir. O app junta a seleção e a fala e substitui a seleção pelo texto consolidado.
+
+- **Captura da seleção:** primeiro pela Accessibility, ao apertar o atalho, sem tocar na área de transferência. Se o app não expõe a seleção (VS Code, Cursor, Pages), simula ⌘C depois que o atalho é solto, com todos os modificadores livres, e restaura a área de transferência. Assim o ⌘C não vira outro atalho, como ⌥⌘C.
+- **Só alterações:** o modelo devolve, em JSON (saída estruturada), uma lista `original → revised` com trechos copiados literalmente do texto. O app aplica a lista localmente: o resto fica idêntico, byte a byte, e a resposta é curta (teste: 3,0 s para 2 alterações em 4 pontos do texto). Se algum trecho não casar exatamente uma vez, o app pede a reescrita completa como reserva e avisa se o resultado encolher mais de 30%.
+- **Salvaguardas:**
+  - Só envia com o atalho explícito.
+  - Bloqueia seleções com chaves ou segredos conhecidos (Anthropic, OpenAI, AWS, GitHub, Slack, Google, Stripe, chaves privadas, JWT, `password=`). Nesse caso, nada é enviado e só a fala vai para o histórico.
+  - Limita a seleção a 15 mil caracteres.
+  - Recusa campos de senha.
+  - A seleção vai marcada como conteúdo, não como instrução.
+- **Terminais:** colar não substitui uma seleção feita com o mouse, então o resultado vai para a área de transferência, com um aviso. Apagar o texto antigo automaticamente exigiria Ctrl+C, que no Claude Code pode encerrar a sessão.
+- **Sem seleção:** a fala vira um prompt novo, como no ⌥ direito.
+- **Falha na revisão:** o texto original não é tocado, e a fala fica no histórico.
 
 ---
 
@@ -254,17 +270,22 @@ Dependência externa única no início: **WhisperKit**. O resto é framework da 
 - **Pronto quando:** ditar no Claude Code devolve um prompt limpo em menos de ~5 s, sem perder o que estava na área de transferência, e todo ditado aparece no histórico, inclusive quando não havia campo em foco.
 - **Status:** ✅ concluída (06/11/2026), com 14 testes de unidade passando. Nos ditados reais de 14–39 s, a transcrição levou 0,9–2,3 s e o refinamento (Sonnet 5.5) 1,7–2,4 s: ~3–5 s depois de soltar a tecla. No Pages, o texto não era colado porque o foco aparece como `AXScrollArea`. A regra foi corrigida e a colagem confirmada.
 
+### Revisão de seleção por voz (antecipada da Fase 3)
+- **Status:** ✅ concluída (06/11/2026), com 33 testes de unidade passando. No teste real no Pages, o ⌘C leu a seleção em 65 ms e a revisão aplicou 4 alterações (170 → 298 caracteres), preservando o texto original. Foram ~5 s depois de soltar a tecla: 1,1 s de transcrição e 3,8 s de revisão com o Sonnet 5.5. A reescrita completa (reserva) só foi verificada pelos testes de unidade.
+- **Lição do primeiro teste:** numa tentativa anterior, o ⌘C não leu a seleção do Pages, e o app colou um prompt novo por cima do texto. A causa exata não foi confirmada; a espera de 0,4 s era a suspeita, mas a cópia bem-sucedida levou só 65 ms. Duas mudanças garantem que isso não se repita: a revisão nunca cola um prompt novo quando não consegue ler a seleção, e o log registra o tempo de cada leitura por ⌘C e de cada gesto do atalho.
+
 ### Fase 2 — Contexto e qualidade
-- ContextCollector (app, janela, projeto).
-- Glossário global e por projeto, alimentando o Whisper e o Claude.
-- Modo literal (só limpeza) em atalho próprio.
-- Filtro de alucinações ampliado com casos reais do histórico.
-- Golden set com 20 a 30 ditados reais (tirados do histórico) e avaliação do refinador.
-- **Pronto quando:** os termos do projeto saem corretos e o golden set passa sem regressões.
+- ✅ Projeto reconhecido pelo título da janela, com base no glossário.
+- ✅ Glossário global e por projeto alimentando o Whisper (`promptTokens`) e o Claude (`<glossario>`), salvo em `Glossary.json` e editável em Preferências → Glossário. A tela mostra o título da última janela, para ajudar a dar nome aos projetos.
+- ✅ Modo literal no ⌘ direito segurado. Toques rápidos (ex.: ⌘C) não abrem o microfone, e o HUD só aparece depois de 300 ms.
+- ✅ Filtro de alucinações ampliado (créditos de legenda em pt/es/fr, despedidas de vídeo, "Thank you." etc.). Cada remoção vai para o log com o nome da regra, nunca com o texto, para o filtro crescer com casos reais.
+- ✅ Estrela no histórico marca ditados para a avaliação, e "Exportar avaliação" grava `Eval/cases.jsonl` (transcrição bruta, contexto, original da revisão e texto entregue).
+- Montar e rodar a avaliação do refinador quando houver 15 ou mais casos reais marcados.
+- **Pronto quando:** os termos do projeto saem corretos e o conjunto de avaliação passa sem regressões.
+- **Status:** termos do projeto ✅. Teste com voz sintetizada e glossário `HotkeyLogic`, `WhisperKitTranscriber` e `DictationCoordinator`: sem glossário, o Whisper ouviu "ROTIC e LOGIC" e "esper kit transcriber"; com glossário, a própria transcrição saiu certa e o Claude ainda corrigiu "tecla FM" para "Fn". Para isso, o prompt passou a dizer que os termos do glossário existem porque a transcrição os erra; antes, o modelo era cauteloso demais e mantinha `alt-hosts.ts` mesmo com `auth.routes.ts` no glossário. A avaliação fica pendente até haver casos reais suficientes. 34 testes de unidade passando.
 
 ### Fase 3 — Recursos avançados
-- Modo mãos-livres.
-- Editar texto selecionado por voz.
+- Modo mãos-livres (atalho a definir).
 - Transcrição em streaming durante a fala.
 - Iniciar com o macOS.
 
