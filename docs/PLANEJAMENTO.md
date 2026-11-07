@@ -10,7 +10,7 @@ Inspirado nos princípios de ferramentas de ditado com IA, mas com outro objetiv
 
 | Tema | Decisão |
 |---|---|
-| Plataforma | macOS 26+, Apple Silicon (máquina de desenvolvimento: M5, 16 GB) |
+| Plataforma | macOS 26+, Apple Silicon (máquina de desenvolvimento: M5, 16 GB). iPhone planejado na Fase 4 |
 | Stack | Swift 6 + SwiftUI + AppKit, projeto gerado com XcodeGen |
 | Transcrição | **Local**, WhisperKit com Whisper large-v3-turbo (Core ML) |
 | Refinamento | Claude via API, HTTP direto (não há SDK oficial em Swift). **Modelo selecionável** entre os modelos da Anthropic; padrão **Claude Opus 5.5** (`claude-opus-5-5`) |
@@ -18,7 +18,7 @@ Inspirado nos princípios de ferramentas de ditado com IA, mas com outro objetiv
 | Entrega | **Colar direto** no campo em foco; você revisa e dá Enter |
 | Histórico | **Todo ditado fica salvo no app** com data e hora, para copiar e reutilizar depois, inclusive quando não havia campo em foco |
 | Nome e bundle ID | **InfinidimTypes** · `com.infinidim.InfinidimTypes` |
-| Distribuição | Uso pessoal, fora da App Store, sem App Sandbox, assinado com o certificado Apple Development (time `D93D4Z3ZT7`) |
+| Distribuição | Uso pessoal, fora da App Store, sem App Sandbox, time `D93D4Z3ZT7`. `.dmg` assinado com Apple Development (`make dmg`) ou com Developer ID e notarizado (`make notarize`), ver `docs/DISTRIBUICAO.md` |
 
 ---
 
@@ -289,7 +289,39 @@ Dependência externa única no início: **WhisperKit**. O resto é framework da 
 - Transcrição em streaming durante a fala.
 - Iniciar com o macOS.
 
-### Fase 4 — Ideias futuras
+### Fase 4 — iPhone (iOS)
+
+A ideia continua a mesma (fala livre → prompt sólido), mas a entrega muda. O iOS não permite atalho global, colar em outro app nem ler a seleção pela Acessibilidade, e um teclado personalizado não tem acesso ao microfone. Por isso a fase tem duas etapas, e a segunda só vale a pena se o uso no iPhone pegar.
+
+**4a — Gatilho rápido + área de transferência**
+- App para iOS 26 com o mesmo histórico, glossário e seletor de modelo do Mac.
+- Gatilhos por um App Intent: Botão de Ação (iPhone 15 Pro em diante), controle na Central de Controle e na tela bloqueada, e app Atalhos.
+- Fluxo: gatilho → grava até tocar em parar → transcreve → refina → copia para a área de transferência e salva no histórico. Você cola onde quiser.
+- Revisão: o texto que está na área de transferência é o original. Você copia o trecho, aciona a revisão, dita a instrução, e o resultado volta para a área de transferência.
+- Sem título de janela, o projeto do glossário é escolhido numa lista, e o app lembra o último.
+- Transcrição: comparar o SpeechAnalyzer (nativo do iOS 26, sem download) com o WhisperKit num modelo menor. O large-v3-turbo de 632 MB é pesado demais para o iPhone. Verificar também se o SpeechAnalyzer aceita o glossário como vocabulário.
+- **Pronto quando:** do Botão de Ação até o prompt na área de transferência em menos de ~5 s depois de parar de falar, e todo ditado aparece no histórico.
+
+**4b — Teclado próprio**
+- Extensão de teclado com acesso total (rede e App Group compartilhado com o app).
+- O teclado não pode gravar. O botão de ditado abre o app principal, que liga o microfone e mantém a sessão de áudio em segundo plano; você volta ao app anterior e fala. O texto volta pelo App Group e entra no campo com `insertText`.
+- Revisão direta: o `textDocumentProxy` entrega o texto selecionado, e o resultado substitui a seleção. Alguns apps expõem pouco contexto ao teclado.
+- **Pronto quando:** ditar no app do Claude ou no navegador e o prompt entrar no campo, com uma única troca de app no começo da sessão.
+
+**Reaproveitamento do código**
+- Extrair um pacote Swift compartilhado (`InfinidimCore`) com Refinement inteiro (cliente da Anthropic, refinador, revisão por trechos, detector de segredos, catálogo de modelos e prompts), Storage (`DictationRecord`, glossário, exportação da avaliação), `HallucinationFilter` e o protocolo `Transcriber`.
+- Fica só no Mac: `HotkeyMonitor`, `TextInserter`, `FocusDetector`, `SelectionReader`, `ContextCollector`, `HUDPanel` e o menu.
+- O bloco `<contexto>` enviado ao Claude passa a trazer o projeto escolhido, em vez de app e janela.
+
+**Dados entre aparelhos**
+- Chave da API colada uma vez em cada aparelho. Sincronizar pelo Keychain do iCloud fica como opção.
+- Histórico e glossário separados por aparelho no começo. A sincronização pelo CloudKit (o SwiftData suporta) exige ajustes no modelo de dados e fica para depois.
+
+**Distribuição**
+- TestFlight com teste interno, que dispensa a revisão da Apple. Exige os contratos ativos no App Store Connect.
+- Etapa 4b: a sessão de microfone em segundo plano precisa de justificativa clara se o app for para a App Store.
+
+### Ideias futuras
 - Glossário automático extraído do repositório aberto (nomes de módulos, classes, funções).
 - Saída em inglês por atalho.
 - Painel de custo mensal.
@@ -311,6 +343,7 @@ Dependência externa única no início: **WhisperKit**. O resto é framework da 
 | Perder texto por falha ou travamento | Salvo no histórico antes de qualquer tentativa de colar |
 | Permissões perdidas a cada build | Assinatura estável com o mesmo time |
 | Modelo novo com parâmetros diferentes | Requisição montada por modelo no `ModelCatalog` e lista atualizada pela Models API |
+| Teclado do iOS sem microfone | O app principal grava em segundo plano; o teclado só insere o texto (Fase 4b) |
 
 ---
 
@@ -332,3 +365,4 @@ A transcrição local tem **custo zero**.
 ## 11. Pontos ainda em aberto
 
 - Atalhos do modo literal e da edição por voz.
+- iOS: SpeechAnalyzer ou WhisperKit, e se o app do iPhone usa o mesmo bundle ID do Mac.
