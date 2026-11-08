@@ -55,7 +55,7 @@ Ainda não há versão publicada nas Releases. Por enquanto, compile a partir do
 
 ```bash
 brew install xcodegen
-git clone <url-deste-repositório>
+git clone https://github.com/HelioVieiraSilvaJr/InfiniTypes.git
 cd InfiniTypes/apple
 make run
 ```
