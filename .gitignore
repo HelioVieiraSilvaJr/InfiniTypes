@@ -3,3 +3,15 @@ build/
 dist/
 *.xcodeproj
 xcuserdata/
+
+# Assinatura local de cada pessoa (ver apple/Config/Signing.local.xcconfig.example)
+*.local.xcconfig
+
+# Credenciais: nunca no repositório
+.env
+.env.*
+*.p8
+*.p12
+*.cer
+*.mobileprovision
+*.provisionprofile

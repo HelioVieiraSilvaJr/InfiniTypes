@@ -1,0 +1,4 @@
+// Copie para Signing.local.xcconfig e troque pelo ID do seu time (developer.apple.com/account).
+// Com uma assinatura estável, as permissões do macOS continuam valendo entre um build e outro.
+DEVELOPMENT_TEAM = ABCDE12345
+CODE_SIGN_IDENTITY = Apple Development

@@ -1,6 +1,6 @@
-# InfinidimTypes — Planejamento
+# InfiniTypes — Planejamento
 
-App de barra de menu para macOS que transforma fala livre em **prompts sólidos para IAs de codificação**. Você segura um atalho, fala do jeito que pensa e, ao soltar, recebe um prompt limpo, objetivo e estruturado, colado onde está o cursor (Claude Code, Cursor, VS Code, terminal).
+App de ditado que transforma fala livre em **prompts sólidos para IAs de codificação**. Projeto aberto (licença MIT), hoje no macOS e a caminho do Windows, do iPhone e do Android. No Mac, você segura um atalho, fala do jeito que pensa e, ao soltar, recebe um prompt limpo, objetivo e estruturado, colado onde está o cursor (Claude Code, Cursor, VS Code, terminal).
 
 Inspirado nos princípios de ferramentas de ditado com IA, mas com outro objetivo: **não é um ditado genérico, é um compositor de prompts técnicos**.
 
@@ -10,15 +10,15 @@ Inspirado nos princípios de ferramentas de ditado com IA, mas com outro objetiv
 
 | Tema | Decisão |
 |---|---|
-| Plataforma | macOS 26+, Apple Silicon (máquina de desenvolvimento: M5, 16 GB). iPhone planejado na Fase 4 |
-| Stack | Swift 6 + SwiftUI + AppKit, projeto gerado com XcodeGen |
-| Transcrição | **Local**, WhisperKit com Whisper large-v3-turbo (Core ML) |
+| Plataformas | macOS 26+ (pronto). Depois, nesta ordem: Windows (Fase 4), iPhone (Fase 5) e Android (Fase 6) |
+| Stack | **Nativo por plataforma**: Swift 6 + SwiftUI + AppKit no macOS (projeto gerado com XcodeGen), Swift no iPhone, C#/.NET no Windows e Kotlin no Android. Prompts e casos de conformidade ficam em `shared/`, usados por todas |
+| Transcrição | **Local**. No Mac, WhisperKit com Whisper large-v3-turbo (Core ML) |
 | Refinamento | Claude via API, HTTP direto (não há SDK oficial em Swift). **Modelo selecionável** entre os modelos da Anthropic; padrão **Claude Opus 5.5** (`claude-opus-5-5`) |
 | Idioma de saída | **Português**; termos técnicos e identificadores ficam no original |
 | Entrega | **Colar direto** no campo em foco; você revisa e dá Enter |
 | Histórico | **Todo ditado fica salvo no app** com data e hora, para copiar e reutilizar depois, inclusive quando não havia campo em foco |
-| Nome e bundle ID | **InfinidimTypes** · `com.infinidim.InfinidimTypes` |
-| Distribuição | Uso pessoal, fora da App Store, sem App Sandbox, time `D93D4Z3ZT7`. `.dmg` assinado com Apple Development (`make dmg`) ou com Developer ID e notarizado (`make notarize`), ver `docs/DISTRIBUICAO.md` |
+| Nome e bundle ID | **InfiniTypes** · `com.infinidim.InfiniTypes`. Até a 0.1.0 se chamava InfinidimTypes; os dados migram sozinhos na primeira abertura |
+| Distribuição | **Projeto aberto, licença MIT.** Cada pessoa usa a própria chave da API da Anthropic. No Mac: fora da App Store, sem App Sandbox, `.dmg` com Developer ID e notarização (ver `docs/DISTRIBUICAO.md`) |
 
 ---
 
@@ -50,7 +50,7 @@ Inspirado nos princípios de ferramentas de ditado com IA, mas com outro objetiv
 ## 3. Arquitetura
 
 ```
-┌──────────────────── InfinidimTypes (menu bar, sem ícone no Dock) ────────────────────┐
+┌──────────────────── InfiniTypes (menu bar, sem ícone no Dock) ──────────────────────┐
 │                                                                                     │
 │  HotkeyMonitor ──▶ DictationCoordinator  (máquina de estados, orquestra tudo)       │
 │                         │                                                           │
@@ -90,7 +90,7 @@ idle ──(⌥ pressionado)──▶ recording ──(⌥ solto)──▶ trans
 
 ### 3.3 Transcriber (WhisperKit)
 - Dependência SPM: `argmaxinc/WhisperKit`.
-- Modelo large-v3-turbo baixado no primeiro uso para `~/Library/Application Support/InfinidimTypes/Models` (~1 GB) e carregado na memória ao iniciar o app, para a primeira transcrição já sair rápida.
+- Modelo large-v3-turbo baixado no primeiro uso para `~/Library/Application Support/InfiniTypes/Models` (~1 GB) e carregado na memória ao iniciar o app, para a primeira transcrição já sair rápida.
 - Idioma fixo em `pt`. A detecção automática tende a trocar para inglês quando há muitos termos técnicos.
 - O glossário entra como *prompt* inicial do Whisper, para ele acertar nomes como `Supabase`, `useEffect`, `Zod`.
 - **Proteção contra alucinações**: o Whisper inventa frases em silêncio, como "Legendas pela comunidade Amara.org" ou "Obrigado.". Mitigação: corte de silêncio (VAD), duração mínima e lista de frases conhecidas a descartar.
@@ -116,7 +116,7 @@ idle ──(⌥ pressionado)──▶ recording ──(⌥ solto)──▶ trans
 ### 3.6 TextInserter
 **Antes de colar, verifica se há campo de texto em foco** (`FocusDetector`):
 - Via Accessibility: o elemento focado tem papel `AXTextField` / `AXTextArea` ou expõe uma seleção de texto.
-- **Na dúvida, cola**, porque o texto já está no histórico. Apps que desenham o próprio documento, como o Pages, informam o foco como área de rolagem (`AXScrollArea`). Só deixa de colar quando é claro que não há onde digitar: nenhum elemento em foco, a área de trabalho ou as listas do Finder, ou o próprio InfinidimTypes.
+- **Na dúvida, cola**, porque o texto já está no histórico. Apps que desenham o próprio documento, como o Pages, informam o foco como área de rolagem (`AXScrollArea`). Só deixa de colar quando é claro que não há onde digitar: nenhum elemento em foco, a área de trabalho ou as listas do Finder, ou o próprio InfiniTypes.
 - Cada decisão vai para o log (`Foco: <app> (papel …) → resultado`), para ajustar a regra com casos reais.
 - Terminais e editores conhecidos (Terminal, iTerm2, Ghostty, Warp, Cursor, VS Code, Xcode, Zed) contam como campo mesmo quando a Accessibility responde mal, porque apps Electron e terminais expõem isso de forma irregular.
 - **Sem campo em foco: não cola.** O HUD mostra "Salvo no histórico" e o atalho para abrir o histórico. Uma preferência opcional também copia o texto para a área de transferência.
@@ -229,26 +229,33 @@ Se o Opus ficar lento demais na prática, basta trocar o modelo nas preferência
 ## 7. Estrutura do projeto
 
 ```
-InfinidimTypes/
-├── project.yml                     # XcodeGen → gera InfinidimTypes.xcodeproj
-├── Makefile                        # make build · make run · make clean
-├── InfinidimTypes/
-│   ├── App/                        # InfinidimTypesApp, AppDelegate, MenuBarContent
-│   ├── Core/                       # DictationCoordinator, DictationState, PermissionsManager, Log
-│   ├── Input/                      # HotkeyMonitor, AudioRecorder
-│   ├── Transcription/              # Transcriber (protocolo), WhisperKitTranscriber, HallucinationFilter
-│   ├── Context/                    # ContextCollector (+ leitura da Accessibility), AppActivityTracker
-│   ├── Refinement/                 # PromptRefiner (protocolo), ClaudeRefiner, AnthropicClient, ModelCatalog, SystemPrompt.md
-│   ├── Output/                     # TextInserter, FocusDetector, PasteboardSnapshot
-│   ├── UI/                         # HUDPanel, HistoryView, SettingsView, OnboardingView, WindowPresenter
-│   ├── Storage/                    # KeychainStore, AppSettings, HistoryStore (SwiftData), AppPaths
-│   └── Resources/                  # Info.plist, .entitlements, AppIcon.icon, Assets.xcassets
-├── InfinidimTypesTests/            # testes de unidade (make test) + golden set do refinador (Fase 2)
-└── docs/
-    └── PLANEJAMENTO.md
+InfiniTypes/
+├── README.md · LICENSE · CONTRIBUTING.md · SECURITY.md
+├── .github/                        # CI do macOS, modelos de issue e de PR
+├── apple/
+│   ├── project.yml                 # XcodeGen → gera InfiniTypes.xcodeproj
+│   ├── Makefile                    # make build · test · run · dmg · notarize
+│   ├── Config/                     # Signing.xcconfig (ad hoc) + Signing.local.xcconfig de cada pessoa
+│   ├── InfiniTypes/
+│   │   ├── App/                    # InfiniTypesApp, AppDelegate, MenuBarContent
+│   │   ├── Core/                   # DictationCoordinator, DictationMode, PermissionsManager, Log
+│   │   ├── Input/                  # HotkeyMonitor, AudioRecorder
+│   │   ├── Transcription/          # Transcriber (protocolo), WhisperKitTranscriber, HallucinationFilter
+│   │   ├── Context/                # ContextCollector, SelectionReader, AppActivityTracker
+│   │   ├── Refinement/             # PromptRefiner, AnthropicClient, RevisionPatcher, SecretScanner, ModelCatalog
+│   │   ├── Output/                 # TextInserter, FocusDetector
+│   │   ├── UI/                     # HUDPanel, HistoryView, SettingsView, GlossarySettingsView, OnboardingView
+│   │   ├── Storage/                # KeychainStore, AppSettings, HistoryStore (SwiftData), Glossary, AppPaths, LegacyMigration
+│   │   └── Resources/              # Info.plist, .entitlements, AppIcon.icon, Assets.xcassets
+│   └── InfiniTypesTests/           # testes de unidade (make test)
+├── shared/
+│   └── prompts/                    # SystemPrompt, LiteralPrompt e RevisionPrompt
+└── docs/                           # PLANEJAMENTO.md, DISTRIBUICAO.md
 ```
 
-Dependência externa única no início: **WhisperKit**. O resto é framework da Apple.
+As pastas `windows/` e `android/` entram quando cada fase começar.
+
+No Mac, a única dependência externa é o **WhisperKit**, fixado numa versão exata. O resto é framework da Apple.
 
 ---
 
@@ -284,16 +291,42 @@ Dependência externa única no início: **WhisperKit**. O resto é framework da 
 - **Pronto quando:** os termos do projeto saem corretos e o conjunto de avaliação passa sem regressões.
 - **Status:** termos do projeto ✅. Teste com voz sintetizada e glossário `HotkeyLogic`, `WhisperKitTranscriber` e `DictationCoordinator`: sem glossário, o Whisper ouviu "ROTIC e LOGIC" e "esper kit transcriber"; com glossário, a própria transcrição saiu certa e o Claude ainda corrigiu "tecla FM" para "Fn". Para isso, o prompt passou a dizer que os termos do glossário existem porque a transcrição os erra; antes, o modelo era cauteloso demais e mantinha `alt-hosts.ts` mesmo com `auth.routes.ts` no glossário. A avaliação fica pendente até haver casos reais suficientes. 34 testes de unidade passando.
 
+### Projeto aberto e novo nome
+- Nome **InfiniTypes**. Na primeira abertura, o app traz a pasta de dados, as preferências e a chave da API do nome antigo.
+- Repositório organizado para várias plataformas: `apple/`, `shared/prompts/` e `docs/`, com README, licença MIT, guia de contribuição, política de segurança, modelos de issue e de PR e CI do macOS no GitHub Actions.
+- Assinatura ad hoc por padrão, para qualquer pessoa compilar. Quem tem conta da Apple põe o próprio time em `Config/Signing.local.xcconfig`, fora do git.
+- Os testes usam uma pasta temporária e não tocam mais no histórico real. As chaves falsas dos testes são montadas por partes, para não disparar detectores de segredos.
+- O log de falha da revisão deixou de registrar trechos do texto do usuário.
+- **Status:** ✅ concluído (08/11/2026). 34 testes passando com assinatura ad hoc e com o time. Migração verificada no Mac de desenvolvimento: 23 ditados, modelo de voz, preferências e chave da API. A CI só roda depois de o repositório ir para o GitHub.
+
 ### Fase 3 — Recursos avançados
 - Modo mãos-livres (atalho a definir).
 - Transcrição em streaming durante a fala.
 - Iniciar com o macOS.
 
-### Fase 4 — iPhone (iOS)
+### Fase 4 — Windows
+
+Mesmo uso do Mac: atalho segurado, fala livre e prompt colado no campo em foco.
+
+- **Stack:** C# com .NET 10 e WinUI 3. O app fica na área de notificação, sem janela principal.
+- **Antes de começar:** extrair os casos de conformidade para `shared/conformance/` (detector de segredos, filtro de alucinações, escolha do projeto, aplicação das alterações da revisão e montagem da requisição) e fazer os testes do Mac lerem esses arquivos. Os testes do Windows usam os mesmos.
+- **Atalho:** gancho de teclado de baixo nível (`WH_KEYBOARD_LL`) para a tecla segurada e o toque duplo. No teclado ABNT2, o Alt direito é o AltGr, usado para digitar `/`, `?` e `°`. Por isso o padrão no Windows é o **Ctrl direito**, configurável.
+- **Áudio:** WASAPI, convertido para 16 kHz mono.
+- **Transcrição local:** whisper.cpp pelo Whisper.net, com o large-v3-turbo quantizado. GPU quando houver (CUDA ou Vulkan), CPU como reserva.
+- **Contexto:** título da janela em foco, para escolher o projeto do glossário.
+- **Colar:** área de transferência + `SendInput` com Ctrl+V, restaurando o conteúdo anterior. Alguns terminais pedem Ctrl+Shift+V.
+- **Seleção para a revisão:** UI Automation (`TextPattern`) e, como reserva, Ctrl+C simulado.
+- **Chave da API** no Gerenciador de Credenciais do Windows. **Histórico** em SQLite, em `%LOCALAPPDATA%\InfiniTypes`.
+- **Distribuição:** instalador assinado nas Releases do GitHub; sem assinatura de código, o SmartScreen mostra aviso. Depois, winget.
+- **CI:** build e testes num executor Windows do GitHub Actions.
+- **Teste:** exige um Windows 11 de verdade ou uma máquina virtual (no Mac com Apple Silicon, Windows 11 ARM).
+- **Pronto quando:** no Windows 11, ditar no Claude Code ou no VS Code devolve o prompt colado em menos de ~5 s, e todo ditado aparece no histórico.
+
+### Fase 5 — iPhone (iOS)
 
 A ideia continua a mesma (fala livre → prompt sólido), mas a entrega muda. O iOS não permite atalho global, colar em outro app nem ler a seleção pela Acessibilidade, e um teclado personalizado não tem acesso ao microfone. Por isso a fase tem duas etapas, e a segunda só vale a pena se o uso no iPhone pegar.
 
-**4a — Gatilho rápido + área de transferência**
+**5a — Gatilho rápido + área de transferência**
 - App para iOS 26 com o mesmo histórico, glossário e seletor de modelo do Mac.
 - Gatilhos por um App Intent: Botão de Ação (iPhone 15 Pro em diante), controle na Central de Controle e na tela bloqueada, e app Atalhos.
 - Fluxo: gatilho → grava até tocar em parar → transcreve → refina → copia para a área de transferência e salva no histórico. Você cola onde quiser.
@@ -302,14 +335,14 @@ A ideia continua a mesma (fala livre → prompt sólido), mas a entrega muda. O 
 - Transcrição: comparar o SpeechAnalyzer (nativo do iOS 26, sem download) com o WhisperKit num modelo menor. O large-v3-turbo de 632 MB é pesado demais para o iPhone. Verificar também se o SpeechAnalyzer aceita o glossário como vocabulário.
 - **Pronto quando:** do Botão de Ação até o prompt na área de transferência em menos de ~5 s depois de parar de falar, e todo ditado aparece no histórico.
 
-**4b — Teclado próprio**
+**5b — Teclado próprio**
 - Extensão de teclado com acesso total (rede e App Group compartilhado com o app).
 - O teclado não pode gravar. O botão de ditado abre o app principal, que liga o microfone e mantém a sessão de áudio em segundo plano; você volta ao app anterior e fala. O texto volta pelo App Group e entra no campo com `insertText`.
 - Revisão direta: o `textDocumentProxy` entrega o texto selecionado, e o resultado substitui a seleção. Alguns apps expõem pouco contexto ao teclado.
 - **Pronto quando:** ditar no app do Claude ou no navegador e o prompt entrar no campo, com uma única troca de app no começo da sessão.
 
 **Reaproveitamento do código**
-- Extrair um pacote Swift compartilhado (`InfinidimCore`) com Refinement inteiro (cliente da Anthropic, refinador, revisão por trechos, detector de segredos, catálogo de modelos e prompts), Storage (`DictationRecord`, glossário, exportação da avaliação), `HallucinationFilter` e o protocolo `Transcriber`.
+- Extrair um pacote Swift compartilhado (`InfiniTypesCore`) com Refinement inteiro (cliente da Anthropic, refinador, revisão por trechos, detector de segredos, catálogo de modelos e prompts), Storage (`DictationRecord`, glossário, exportação da avaliação), `HallucinationFilter` e o protocolo `Transcriber`.
 - Fica só no Mac: `HotkeyMonitor`, `TextInserter`, `FocusDetector`, `SelectionReader`, `ContextCollector`, `HUDPanel` e o menu.
 - O bloco `<contexto>` enviado ao Claude passa a trazer o projeto escolhido, em vez de app e janela.
 
@@ -319,7 +352,16 @@ A ideia continua a mesma (fala livre → prompt sólido), mas a entrega muda. O 
 
 **Distribuição**
 - TestFlight com teste interno, que dispensa a revisão da Apple. Exige os contratos ativos no App Store Connect.
-- Etapa 4b: a sessão de microfone em segundo plano precisa de justificativa clara se o app for para a App Store.
+- Etapa 5b: a sessão de microfone em segundo plano precisa de justificativa clara se o app for para a App Store.
+
+### Fase 6 — Android
+- **Stack:** Kotlin + Jetpack Compose.
+- **Forma principal: teclado próprio** (`InputMethodService`). Diferente do iOS, o teclado do Android pode usar o microfone depois que o app recebe a permissão. O botão de ditado grava, e o texto entra no campo com `commitText`. A revisão lê a seleção com `getSelectedText` e a substitui.
+- **Atalho rápido:** bloco nas Configurações Rápidas, com entrega pela área de transferência, para quem não quiser trocar de teclado.
+- **Transcrição:** comparar o whisper.cpp (via JNI, com modelo menor) com o reconhecimento no próprio aparelho do Android 13 em diante.
+- **Chave da API** cifrada com uma chave do Android Keystore. **Histórico** em Room (SQLite).
+- **Distribuição:** APK assinado nas Releases do GitHub; depois, Google Play e F-Droid.
+- **Pronto quando:** ditar pelo teclado no app do Claude ou no navegador e o prompt entrar no campo em menos de ~5 s.
 
 ### Ideias futuras
 - Glossário automático extraído do repositório aberto (nomes de módulos, classes, funções).
@@ -343,7 +385,9 @@ A ideia continua a mesma (fala livre → prompt sólido), mas a entrega muda. O 
 | Perder texto por falha ou travamento | Salvo no histórico antes de qualquer tentativa de colar |
 | Permissões perdidas a cada build | Assinatura estável com o mesmo time |
 | Modelo novo com parâmetros diferentes | Requisição montada por modelo no `ModelCatalog` e lista atualizada pela Models API |
-| Teclado do iOS sem microfone | O app principal grava em segundo plano; o teclado só insere o texto (Fase 4b) |
+| Teclado do iOS sem microfone | O app principal grava em segundo plano; o teclado só insere o texto (Fase 5b) |
+| Alt direito é o AltGr no Windows (ABNT2) | Ctrl direito como padrão no Windows; atalho configurável |
+| Plataformas divergirem no comportamento | Prompts únicos em `shared/` e casos de conformidade rodados pelos testes de cada plataforma |
 
 ---
 
@@ -364,5 +408,8 @@ A transcrição local tem **custo zero**.
 
 ## 11. Pontos ainda em aberto
 
-- Atalhos do modo literal e da edição por voz.
+- Atalho do modo mãos-livres.
+- Windows: WinUI 3 ou WPF, e instalador MSIX ou clássico.
 - iOS: SpeechAnalyzer ou WhisperKit, e se o app do iPhone usa o mesmo bundle ID do Mac.
+- Android: whisper.cpp ou o reconhecimento do próprio aparelho.
+- Idiomas: hoje a interface e os prompts são só em português. Abrir para outros idiomas amplia o público do projeto.

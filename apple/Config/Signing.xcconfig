@@ -1,0 +1,10 @@
+// Assinatura padrão para quem compila o projeto: ad hoc ("Sign to Run Locally"), sem conta da Apple.
+// O macOS vincula as permissões (microfone e Acessibilidade) à assinatura; com ad hoc, elas podem
+// ser pedidas de novo a cada build. Para assinar com o seu time, copie Signing.local.xcconfig.example
+// para Signing.local.xcconfig (ignorado pelo git) e preencha.
+CODE_SIGN_STYLE = Manual
+CODE_SIGN_IDENTITY = -
+DEVELOPMENT_TEAM =
+PROVISIONING_PROFILE_SPECIFIER =
+
+#include? "Signing.local.xcconfig"

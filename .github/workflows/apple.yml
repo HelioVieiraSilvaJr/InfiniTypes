@@ -1,0 +1,22 @@
+name: macOS
+
+on:
+  push:
+    branches: [main]
+    paths: ["apple/**", "shared/**", ".github/workflows/apple.yml"]
+  pull_request:
+    paths: ["apple/**", "shared/**", ".github/workflows/apple.yml"]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Instalar o XcodeGen
+        run: brew install xcodegen
+      - name: Testes de unidade
+        run: make -C apple test
