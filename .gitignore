@@ -15,3 +15,10 @@ xcuserdata/
 *.cer
 *.mobileprovision
 *.provisionprofile
+
+# .NET (windows/)
+bin/
+obj/
+.vs/
+*.user
+TestResults/

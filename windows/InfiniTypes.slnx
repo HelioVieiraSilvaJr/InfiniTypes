@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/InfiniTypes.Core/InfiniTypes.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/InfiniTypes.Core.Tests/InfiniTypes.Core.Tests.csproj" />
+  </Folder>
+</Solution>

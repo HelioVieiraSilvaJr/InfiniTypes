@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>InfiniTypes.Core</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Prompts do refinamento, compartilhados com as outras plataformas -->
+    <EmbeddedResource Include="..\..\..\shared\prompts\*.md" LogicalName="Prompts.%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.Sqlite" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="InfiniTypes.Core.Tests" />
+  </ItemGroup>
+
+</Project>
