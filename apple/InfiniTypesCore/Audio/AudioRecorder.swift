@@ -16,6 +16,12 @@ final class AudioRecorder {
 
     func start() throws {
         guard sink == nil else { return }
+        #if os(iOS)
+        // No iPhone a sessão de áudio precisa estar ativa antes de o microfone ter formato.
+        let session = AVAudioSession.sharedInstance()
+        try session.setCategory(.playAndRecord, mode: .measurement, options: [.defaultToSpeaker, .allowBluetoothHFP])
+        try session.setActive(true)
+        #endif
         let input = engine.inputNode
         let format = input.outputFormat(forBus: 0)
         guard format.sampleRate > 0, format.channelCount > 0 else { throw RecorderError.noInputDevice }
@@ -38,6 +44,10 @@ final class AudioRecorder {
         engine.inputNode.removeTap(onBus: 0)
         engine.stop()
         self.sink = nil
+        #if os(iOS)
+        // Devolve o áudio aos outros apps (música, por exemplo).
+        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        #endif
         return sink.drain()
     }
 

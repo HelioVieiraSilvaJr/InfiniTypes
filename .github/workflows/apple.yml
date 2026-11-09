@@ -21,3 +21,5 @@ jobs:
         run: brew install xcodegen
       - name: Testes de unidade
         run: make -C apple test
+      - name: App do iPhone (simulador)
+        run: make -C apple ios

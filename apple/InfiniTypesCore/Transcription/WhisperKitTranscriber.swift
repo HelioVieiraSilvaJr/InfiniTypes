@@ -17,7 +17,14 @@ final class WhisperKitTranscriber: Transcriber {
         case failed(String)
     }
 
-    static let modelVariant = "openai_whisper-large-v3-v20240930_turbo_632MB"
+    /// No Mac e nos iPhones com 8 GB de memória ou mais (15 Pro em diante), o large-v3-turbo. Nos outros
+    /// iPhones, o small quantizado, que cabe na memória e ainda reconhece bem o português.
+    static let modelVariant: String = {
+        #if os(iOS)
+        if ProcessInfo.processInfo.physicalMemory < 7_500_000_000 { return "openai_whisper-small_216MB" }
+        #endif
+        return "openai_whisper-large-v3-v20240930_turbo_632MB"
+    }()
     private static let modelRepo = "argmaxinc/whisperkit-coreml"
     private static let requiredModels = ["AudioEncoder.mlmodelc", "TextDecoder.mlmodelc", "MelSpectrogram.mlmodelc"]
 

@@ -11,7 +11,7 @@ TEAM_ID        := $(shell sed -nE 's/^ *DEVELOPMENT_TEAM *= *([A-Z0-9]+).*/\1/p'
 NOTARY_PROFILE ?= InfiniTypes
 DEVELOPER_ID    = $(shell security find-identity -v -p codesigning | grep "Developer ID Application" | grep "($(TEAM_ID))" | head -1 | awk '{print $$2}')
 
-.PHONY: project build test run release dmg package notarize clean
+.PHONY: project build test run ios ios-run release dmg package notarize clean
 
 # Gera o .xcodeproj a partir do project.yml
 project:
@@ -31,6 +31,20 @@ run: build
 	@while pgrep -x $(APP_NAME) >/dev/null; do sleep 0.2; done
 	@sleep 0.5 # o LaunchServices demora um pouco para registrar o encerramento
 	open $(APP)
+
+# App do iPhone, para o simulador (no aparelho, abra o projeto no Xcode com o seu time)
+IOS_SIM ?= iPhone 17
+IOS_APP := $(DERIVED)/Build/Products/Debug-iphonesimulator/$(APP_NAME).app
+
+ios: project
+	xcodebuild -project $(APP_NAME).xcodeproj -scheme $(APP_NAME)iOS -configuration Debug \
+		-destination 'generic/platform=iOS Simulator' -derivedDataPath $(DERIVED) -quiet build
+
+ios-run: ios
+	-xcrun simctl boot "$(IOS_SIM)"
+	open -a Simulator
+	xcrun simctl install "$(IOS_SIM)" $(IOS_APP)
+	xcrun simctl launch "$(IOS_SIM)" com.infinidim.InfiniTypes
 
 release: project
 	xcodebuild -project $(APP_NAME).xcodeproj -scheme $(APP_NAME) -configuration Release \
