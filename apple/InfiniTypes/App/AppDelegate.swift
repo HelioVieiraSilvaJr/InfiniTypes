@@ -34,6 +34,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
 
         coordinator.onNeedsPermissions = { [weak self] in self?.showOnboarding() }
+        coordinator.onNeedsRelaunch = { [weak self] in self?.relaunch() }
         hotkey.onPress = { [weak self] mode in self?.coordinator.startRecording(mode: mode) }
         hotkey.onHandsFree = { [weak self] in self?.coordinator.startRecording(mode: .prompt, handsFree: true) }
         coordinator.onRecordingEnded = { [weak self] in self?.hotkey.endHandsFree() }
@@ -126,6 +127,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         Task {
             try? await Task.sleep(for: .milliseconds(300))
             await TextInserter.paste(text)
+        }
+    }
+
+    // MARK: Reabertura
+
+    /// Encerra o app e abre de novo o mesmo caminho, que agora tem o build novo. Um processo à parte
+    /// espera este terminar, porque o LaunchServices não abre uma segunda instância do mesmo app.
+    private func relaunch() {
+        let pid = ProcessInfo.processInfo.processIdentifier
+        let reopen = Process()
+        reopen.executableURL = URL(fileURLWithPath: "/bin/sh")
+        reopen.arguments = ["-c", "while kill -0 \(pid) 2>/dev/null; do sleep 0.2; done; sleep 0.5; /usr/bin/open \"$0\"",
+                            Bundle.main.bundlePath]
+        do {
+            try reopen.run()
+        } catch {
+            Logger.permissions.error("Não foi possível reabrir o app: \(error.localizedDescription, privacy: .public)")
+            return
+        }
+        Logger.permissions.notice("Build novo no disco: reabrindo o app")
+        Task {
+            // Tempo para o aviso do HUD ser lido.
+            try? await Task.sleep(for: .seconds(1.5))
+            NSApp.terminate(nil)
         }
     }
 }

@@ -2,6 +2,7 @@ import AppKit
 import ApplicationServices
 import AVFoundation
 import Observation
+import Security
 
 /// Estado das permissões que o app precisa: microfone (gravar o ditado) e
 /// Acessibilidade (atalho global, leitura do contexto e colagem com ⌘V).
@@ -31,6 +32,14 @@ final class PermissionsManager {
         default: .denied
         }
         accessibility = AXIsProcessTrusted() ? .granted : .denied
+    }
+
+    /// Um build novo foi gravado por cima do app aberto. O macOS passa a negar o microfone e a
+    /// Acessibilidade a este processo, mesmo com as permissões concedidas, até o app ser reaberto.
+    var codeReplacedOnDisk: Bool {
+        var code: SecCode?
+        guard SecCodeCopySelf([], &code) == errSecSuccess, let code else { return false }
+        return SecCodeCheckValidity(code, [], nil) == errSecCSStaticCodeChanged
     }
 
     func requestMicrophone() async {

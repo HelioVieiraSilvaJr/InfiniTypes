@@ -31,6 +31,15 @@ struct OnboardingView: View {
                 permissions.requestAccessibility()
             }
 
+            if permissions.accessibility != .granted {
+                // A permissão fica presa à assinatura do app que a recebeu; um build com outra
+                // assinatura continua aparecendo como ligado na lista, mas sem permissão.
+                Text("Se o InfiniTypes já aparece ligado em Acessibilidade, a permissão é de uma versão anterior do app: selecione-o na lista, remova com o botão − e permita de novo.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
             HStack {
                 Spacer()
                 Button(permissions.allGranted ? "Concluir" : "Continuar depois", action: onFinish)

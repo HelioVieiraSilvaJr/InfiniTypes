@@ -30,6 +30,8 @@ final class DictationCoordinator {
     private let recorder = AudioRecorder()
 
     var onNeedsPermissions: (() -> Void)?
+    /// O app aberto foi substituído por um build novo e precisa ser reaberto para recuperar as permissões.
+    var onNeedsRelaunch: (() -> Void)?
     /// A gravação acabou (soltou, cancelou ou atingiu o tempo máximo), para o atalho sair do mãos-livres.
     var onRecordingEnded: (() -> Void)?
 
@@ -142,6 +144,11 @@ final class DictationCoordinator {
         guard permissions.allGranted else {
             phase = .idle
             onRecordingEnded?()
+            if permissions.codeReplacedOnDisk {
+                hud.show(.failure("O InfiniTypes foi atualizado. Reabrindo…"))
+                onNeedsRelaunch?()
+                return
+            }
             hud.show(.failure("Conceda as permissões de Microfone e Acessibilidade"))
             onNeedsPermissions?()
             return

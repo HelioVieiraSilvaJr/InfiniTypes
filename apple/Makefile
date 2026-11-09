@@ -11,7 +11,7 @@ TEAM_ID        := $(shell sed -nE 's/^ *DEVELOPMENT_TEAM *= *([A-Z0-9]+).*/\1/p'
 NOTARY_PROFILE ?= InfiniTypes
 DEVELOPER_ID    = $(shell security find-identity -v -p codesigning | grep "Developer ID Application" | grep "($(TEAM_ID))" | head -1 | awk '{print $$2}')
 
-.PHONY: project build test run ios ios-run release dmg package notarize clean
+.PHONY: project build test run install ios ios-run ios-device release dmg package notarize clean
 
 # Gera o .xcodeproj a partir do project.yml
 project:
@@ -32,6 +32,18 @@ run: build
 	@sleep 0.5 # o LaunchServices demora um pouco para registrar o encerramento
 	open $(APP)
 
+# Instala o build de Release em /Applications, para o uso do dia a dia. Os builds de desenvolvimento
+# continuam na pasta build/ e não substituem o app aberto (o que faria o macOS negar as permissões).
+INSTALL_DIR ?= /Applications
+
+install: release
+	-pkill -x $(APP_NAME)
+	@while pgrep -x $(APP_NAME) >/dev/null; do sleep 0.2; done
+	rm -rf "$(INSTALL_DIR)/$(APP_NAME).app"
+	ditto $(RELEASE_APP) "$(INSTALL_DIR)/$(APP_NAME).app"
+	@sleep 0.5
+	open "$(INSTALL_DIR)/$(APP_NAME).app"
+
 # App do iPhone, para o simulador (no aparelho, abra o projeto no Xcode com o seu time)
 IOS_SIM ?= iPhone 17
 IOS_APP := $(DERIVED)/Build/Products/Debug-iphonesimulator/$(APP_NAME).app
@@ -45,6 +57,21 @@ ios-run: ios
 	open -a Simulator
 	xcrun simctl install "$(IOS_SIM)" $(IOS_APP)
 	xcrun simctl launch "$(IOS_SIM)" com.infinidim.InfiniTypes
+
+# App do iPhone num aparelho pareado com este Mac (cabo ou Wi-Fi), com o Modo de Desenvolvedor ligado.
+# Assina com o time de Config/Signing.local.xcconfig; o Xcode registra o aparelho e cria os perfis.
+# IOS_DEVICE é o nome do aparelho, como aparece em `xcrun devicectl list devices`.
+IOS_DEVICE ?=
+IOS_DEVICE_APP := $(DERIVED)/Build/Products/Release-iphoneos/$(APP_NAME).app
+
+ios-device: project
+	@test -n "$(TEAM_ID)" || { echo "Falta o DEVELOPMENT_TEAM em Config/Signing.local.xcconfig (ver ../CONTRIBUTING.md)."; exit 1; }
+	@test -n "$(IOS_DEVICE)" || { echo 'Informe o aparelho: make ios-device IOS_DEVICE="Nome do iPhone" (lista: xcrun devicectl list devices)'; exit 1; }
+	xcodebuild -project $(APP_NAME).xcodeproj -scheme $(APP_NAME)iOS -configuration Release \
+		-destination 'platform=iOS,name=$(IOS_DEVICE)' -derivedDataPath $(DERIVED) -allowProvisioningUpdates \
+		CODE_SIGN_STYLE=Automatic DEVELOPMENT_TEAM=$(TEAM_ID) CODE_SIGN_IDENTITY="Apple Development" -quiet build
+	xcrun devicectl device install app --device "$(IOS_DEVICE)" $(IOS_DEVICE_APP)
+	xcrun devicectl device process launch --device "$(IOS_DEVICE)" com.infinidim.InfiniTypes
 
 release: project
 	xcodebuild -project $(APP_NAME).xcodeproj -scheme $(APP_NAME) -configuration Release \
