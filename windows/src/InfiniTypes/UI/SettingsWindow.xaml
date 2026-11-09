@@ -82,7 +82,8 @@
                 <Run FontWeight="SemiBold">Segurar o Ctrl direito</Run>: ditar um prompt.<LineBreak />
                 <Run FontWeight="SemiBold">Segurar o Shift direito</Run>: ditar só limpando a fala, sem reestruturar.<LineBreak />
                 <Run FontWeight="SemiBold">Um toque rápido e segurar o Ctrl direito</Run>: revisar por voz o texto selecionado.<LineBreak />
-                <Run FontWeight="SemiBold">Qualquer outra tecla enquanto segura</Run>: cancela o ditado.
+                <Run FontWeight="SemiBold">Dois toques no Shift direito</Run>: ditar sem segurar (mãos livres); um toque termina.<LineBreak />
+                <Run FontWeight="SemiBold">Qualquer outra tecla enquanto segura, ou Esc</Run>: cancela o ditado.
             </TextBlock>
         </StackPanel>
     </ScrollViewer>

@@ -47,6 +47,8 @@ public partial class App : Application
         _tray = new TrayIcon(OpenHistory, () => OpenSettings(state), Quit);
         _hook = new KeyboardHook(Dispatcher);
         _hook.Pressed += coordinator.StartRecording;
+        _hook.HandsFreeStarted += coordinator.StartHandsFree;
+        coordinator.RecordingEnded += _hook.EndHandsFree;
         _hook.Released += coordinator.FinishRecording;
         _hook.Cancelled += coordinator.CancelRecording;
         _hook.Start();

@@ -1,3 +1,4 @@
+import ServiceManagement
 import SwiftUI
 
 struct SettingsView: View {
@@ -95,8 +96,13 @@ private struct GeneralSettingsView: View {
                 LabeledContent("Prompt", value: "Segure o ⌥ direito")
                 LabeledContent("Literal (só limpa)", value: "Segure o ⌘ direito")
                 LabeledContent("Revisar seleção", value: "Toque e segure o ⌥ direito")
-                LabeledContent("Cancelar", value: "Outra tecla enquanto segura")
+                LabeledContent("Mãos livres", value: "Dois toques no ⌘ direito; um toque termina")
+                LabeledContent("Cancelar", value: "Outra tecla enquanto segura, ou Esc")
                 LabeledContent("Modelo de voz", value: transcriber.state.label)
+            }
+
+            Section("Geral") {
+                LaunchAtLoginToggle()
             }
         }
         .formStyle(.grouped)
@@ -129,5 +135,30 @@ extension WhisperKitTranscriber.State {
         case .ready: "Pronto · Whisper large-v3-turbo, local"
         case .failed(let message): "Falhou: \(message)"
         }
+    }
+}
+
+/// Abre o InfiniTypes ao iniciar a sessão, pelo `SMAppService` (aparece em Ajustes do Sistema → Geral → Itens de Início).
+private struct LaunchAtLoginToggle: View {
+    @State private var enabled = SMAppService.mainApp.status == .enabled
+    @State private var message: String?
+
+    var body: some View {
+        Toggle("Abrir ao iniciar a sessão", isOn: Binding(get: { enabled }, set: { update($0) }))
+        if let message {
+            Text(message).font(.caption).foregroundStyle(.secondary)
+        }
+    }
+
+    private func update(_ on: Bool) {
+        do {
+            if on { try SMAppService.mainApp.register() } else { try SMAppService.mainApp.unregister() }
+            message = SMAppService.mainApp.status == .requiresApproval
+                ? "Aprove o InfiniTypes em Ajustes do Sistema → Geral → Itens de Início."
+                : nil
+        } catch {
+            message = "Não consegui mudar: \(error.localizedDescription)"
+        }
+        enabled = SMAppService.mainApp.status == .enabled
     }
 }

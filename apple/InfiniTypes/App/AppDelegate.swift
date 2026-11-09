@@ -35,6 +35,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         coordinator.onNeedsPermissions = { [weak self] in self?.showOnboarding() }
         hotkey.onPress = { [weak self] mode in self?.coordinator.startRecording(mode: mode) }
+        hotkey.onHandsFree = { [weak self] in self?.coordinator.startRecording(mode: .prompt, handsFree: true) }
+        coordinator.onRecordingEnded = { [weak self] in self?.hotkey.endHandsFree() }
         hotkey.onRelease = { [weak self] in self?.coordinator.finishRecording() }
         hotkey.onCancel = { [weak self] in self?.coordinator.cancelRecording() }
         hotkey.start()

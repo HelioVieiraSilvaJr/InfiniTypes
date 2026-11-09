@@ -30,9 +30,13 @@ final class DictationCoordinator {
     private let recorder = AudioRecorder()
 
     var onNeedsPermissions: (() -> Void)?
+    /// A gravação acabou (soltou, cancelou ou atingiu o tempo máximo), para o atalho sair do mãos-livres.
+    var onRecordingEnded: (() -> Void)?
 
     private var phase: Phase = .idle
     private var mode: DictationMode = .prompt
+    /// Gravando sem a tecla segurada: um toque no atalho termina.
+    private var handsFree = false
     private var context: DictationContext = .empty
     /// Seleção lida pela Accessibility ao apertar o atalho. Na revisão é o texto a revisar; nos outros
     /// modos serve para avisar que o texto colado vai substituí-la.
@@ -54,9 +58,13 @@ final class DictationCoordinator {
 
     // MARK: Gravação
 
-    func startRecording(mode: DictationMode) {
-        guard phase == .idle else { return }
+    func startRecording(mode: DictationMode, handsFree: Bool = false) {
+        guard phase == .idle else {
+            if handsFree { onRecordingEnded?() }
+            return
+        }
         self.mode = mode
+        self.handsFree = handsFree
         context = ContextCollector.capture()
         selection = SelectionReader.accessibilitySelection()
         if mode == .revision, selection == .secureField {
@@ -87,6 +95,7 @@ final class DictationCoordinator {
             stopTasks()
             _ = recorder.stop()
             phase = .idle
+            onRecordingEnded?()
             if wasVisible { hud.show(.notice("Ditado cancelado")) } else { hud.hide() }
         case .processing, .idle:
             break
@@ -102,6 +111,7 @@ final class DictationCoordinator {
         case .recording:
             stopTasks()
             let samples = recorder.stop()
+            onRecordingEnded?()
             let audioSeconds = Double(samples.count) / AudioRecorder.sampleRate
             guard audioSeconds >= Self.minimumAudioSeconds else {
                 phase = .idle
@@ -131,6 +141,7 @@ final class DictationCoordinator {
         permissions.refresh()
         guard permissions.allGranted else {
             phase = .idle
+            onRecordingEnded?()
             hud.show(.failure("Conceda as permissões de Microfone e Acessibilidade"))
             onNeedsPermissions?()
             return
@@ -139,13 +150,14 @@ final class DictationCoordinator {
             try recorder.start()
         } catch {
             phase = .idle
+            onRecordingEnded?()
             hud.show(.failure(error.localizedDescription))
             return
         }
         phase = .recording
         recordingStartedAt = .now
 
-        let label = switch (mode, selection) {
+        let modeLabel = switch (mode, selection) {
         case (.revision, .text(let text)): "Ouvindo (revisão de \(text.wordCount) palavras)…"
         case (.revision, _): "Ouvindo (revisão da seleção)…"
         case (.literal, .text): "Ouvindo (literal; vai substituir a seleção)…"
@@ -153,8 +165,9 @@ final class DictationCoordinator {
         case (.prompt, .text): "Ouvindo (prompt novo; vai substituir a seleção)…"
         case (.prompt, _): "Ouvindo…"
         }
-        // Na revisão o gesto é intencional: o aviso aparece na hora, confirmando o modo.
-        let hudDelay = mode == .revision ? .zero : Self.hudDelay
+        let label = handsFree ? "Mãos livres: toque no ⌘ direito para terminar (Esc cancela)…" : modeLabel
+        // Na revisão e no mãos-livres o gesto é intencional: o aviso aparece na hora, confirmando o modo.
+        let hudDelay = mode == .revision || handsFree ? .zero : Self.hudDelay
         pendingTask = Task { [weak self] in
             try? await Task.sleep(for: hudDelay)
             guard !Task.isCancelled, let self, phase == .recording else { return }
@@ -169,7 +182,7 @@ final class DictationCoordinator {
 
     private var hudIsVisible: Bool {
         guard let recordingStartedAt else { return false }
-        return mode == .revision || ContinuousClock.now - recordingStartedAt >= Self.hudDelay
+        return mode == .revision || handsFree || ContinuousClock.now - recordingStartedAt >= Self.hudDelay
     }
 
     private func stopTasks() {

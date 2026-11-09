@@ -37,15 +37,29 @@ internal sealed class DictationCoordinator(
     private readonly AudioRecorder _recorder = new();
     private Phase _phase = Phase.Idle;
     private DictationMode _mode;
+    /// <summary>Gravando sem a tecla segurada: um toque no atalho termina.</summary>
+    private bool _handsFree;
     private DictationContext _context = DictationContext.Empty;
     private Task<Selection> _selection = Task.FromResult(Selection.Nothing);
     private Stopwatch? _recordingClock;
     private CancellationTokenSource? _pending;
 
-    public async void StartRecording(DictationMode mode)
+    /// <summary>A gravação acabou (soltou, cancelou ou atingiu o tempo máximo), para o atalho sair do mãos-livres.</summary>
+    public event Action? RecordingEnded;
+
+    public void StartHandsFree() => StartRecording(DictationMode.Prompt, handsFree: true);
+
+    public void StartRecording(DictationMode mode) => StartRecording(mode, handsFree: false);
+
+    private async void StartRecording(DictationMode mode, bool handsFree)
     {
-        if (_phase != Phase.Idle) return;
+        if (_phase != Phase.Idle)
+        {
+            if (handsFree) RecordingEnded?.Invoke();
+            return;
+        }
         _mode = mode;
+        _handsFree = handsFree;
         _context = ContextCollector.Capture();
         // A seleção é lida enquanto a tecla está segurada: na revisão é o texto a revisar; nos outros modos
         // serve para avisar que o texto colado vai substituí-la.
@@ -89,6 +103,7 @@ internal sealed class DictationCoordinator(
                 _pending?.Cancel();
                 _recorder.Stop();
                 _phase = Phase.Idle;
+                RecordingEnded?.Invoke();
                 if (wasVisible) hud.ShowNotice("Ditado cancelado");
                 else hud.HideNow();
                 break;
@@ -107,6 +122,7 @@ internal sealed class DictationCoordinator(
             case Phase.Recording:
                 _pending?.Cancel();
                 var samples = _recorder.Stop();
+                RecordingEnded?.Invoke();
                 var audioSeconds = (double)samples.Length / ITranscriber.SampleRate;
                 if (audioSeconds < MinimumAudioSeconds)
                 {
@@ -141,6 +157,7 @@ internal sealed class DictationCoordinator(
         catch (InvalidOperationException error)
         {
             _phase = Phase.Idle;
+            RecordingEnded?.Invoke();
             hud.ShowFailure(error.Message);
             return;
         }
@@ -149,8 +166,8 @@ internal sealed class DictationCoordinator(
         var pending = NewPending();
         try
         {
-            // Na revisão o gesto é intencional: o aviso aparece na hora, confirmando o modo.
-            if (_mode != DictationMode.Revision) await Task.Delay(HudDelay, pending.Token);
+            // Na revisão e no mãos-livres o gesto é intencional: o aviso aparece na hora, confirmando o modo.
+            if (_mode != DictationMode.Revision && !_handsFree) await Task.Delay(HudDelay, pending.Token);
             if (_phase == Phase.Recording) hud.ShowRecording(RecordingLabel(), () => _recorder.Level);
             await Task.Delay(MaximumAudio - HudDelay, pending.Token);
             if (_phase == Phase.Recording) FinishRecording();
@@ -163,6 +180,7 @@ internal sealed class DictationCoordinator(
 
     private string RecordingLabel()
     {
+        if (_handsFree) return "Mãos livres: toque no Shift direito para terminar (Esc cancela)…";
         var selection = _selection.IsCompletedSuccessfully ? _selection.Result : Selection.Nothing;
         return (_mode, selection) switch
         {
@@ -176,7 +194,7 @@ internal sealed class DictationCoordinator(
     }
 
     private bool HudIsVisible =>
-        _recordingClock is { } clock && (_mode == DictationMode.Revision || clock.Elapsed >= HudDelay);
+        _recordingClock is { } clock && (_mode == DictationMode.Revision || _handsFree || clock.Elapsed >= HudDelay);
 
     private CancellationTokenSource NewPending()
     {

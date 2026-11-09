@@ -23,6 +23,7 @@ internal sealed class KeyboardHook : IDisposable
     private IntPtr _hook;
 
     public event Action<DictationMode>? Pressed;
+    public event Action? HandsFreeStarted;
     public event Action? Released;
     public event Action? Cancelled;
 
@@ -40,6 +41,9 @@ internal sealed class KeyboardHook : IDisposable
         _hook = SetWindowsHookEx(WH_KEYBOARD_LL, _callback, GetModuleHandle(null), 0);
         if (_hook == IntPtr.Zero) throw new Win32Exception(Marshal.GetLastWin32Error());
     }
+
+    /// <summary>O ditado mãos-livres terminou por outro caminho (tempo máximo, falha).</summary>
+    public void EndHandsFree() => _logic.EndHandsFree();
 
     public void Dispose()
     {
@@ -77,6 +81,10 @@ internal sealed class KeyboardHook : IDisposable
                 case HotkeyEventKind.Press:
                     Log.Info($"Atalho → {hotkey.Mode.RawValue()}");
                     Pressed?.Invoke(hotkey.Mode);
+                    break;
+                case HotkeyEventKind.HandsFree:
+                    Log.Info("Atalho → mãos-livres");
+                    HandsFreeStarted?.Invoke();
                     break;
                 case HotkeyEventKind.Release:
                     Released?.Invoke();

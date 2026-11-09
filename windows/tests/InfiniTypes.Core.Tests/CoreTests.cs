@@ -73,6 +73,39 @@ public sealed class HotkeyLogicTests
     }
 
     [Fact]
+    public void DoubleTapOnRightShiftStartsHandsFreeUntilTheNextTap()
+    {
+        var logic = new HotkeyLogic();
+        logic.KeyDown(RightShift, false, 0);
+        logic.KeyUp(RightShift, 0.1);
+        Assert.Equal(HotkeyEvent.HandsFree, logic.KeyDown(RightShift, false, 0.3));
+        // Soltar a tecla não termina, e digitar no meio da fala também não.
+        Assert.Null(logic.KeyUp(RightShift, 0.4));
+        Assert.Null(logic.KeyDown(KeyC, false, 1));
+        // Uma maiúscula com o Shift direito também não.
+        Assert.Null(logic.KeyDown(RightShift, false, 2));
+        Assert.Null(logic.KeyDown(KeyC, true, 2.1));
+        Assert.Null(logic.KeyUp(RightShift, 2.2));
+        Assert.True(logic.IsHandsFree);
+        // Um toque isolado termina.
+        Assert.Null(logic.KeyDown(RightShift, false, 5));
+        Assert.Equal(HotkeyEvent.Release, logic.KeyUp(RightShift, 5.1));
+        Assert.False(logic.IsHandsFree);
+    }
+
+    [Fact]
+    public void EscapeCancelsHandsFree()
+    {
+        var logic = new HotkeyLogic();
+        logic.KeyDown(RightShift, false, 0);
+        logic.KeyUp(RightShift, 0.1);
+        logic.KeyDown(RightShift, false, 0.3);
+        logic.KeyUp(RightShift, 0.4);
+        Assert.Equal(HotkeyEvent.Cancel, logic.KeyDown(HotkeyLogic.Escape, false, 1));
+        Assert.Equal(HotkeyEvent.Press(DictationMode.Prompt), logic.KeyDown(RightControl, false, 2));
+    }
+
+    [Fact]
     public void TypingBetweenTapsResetsTheDoubleTap()
     {
         var logic = new HotkeyLogic();

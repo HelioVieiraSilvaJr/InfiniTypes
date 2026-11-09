@@ -81,6 +81,35 @@ struct HotkeyLogicTests {
         #expect(logic.flagsChanged(keyCode: 61, flags: rightOption, time: 1.0) == .press(.prompt))
     }
 
+    @Test func doubleTapOnRightCommandStartsHandsFreeUntilTheNextTap() {
+        var logic = HotkeyLogic()
+        _ = logic.flagsChanged(keyCode: 54, flags: rightCommand, time: 0)
+        _ = logic.flagsChanged(keyCode: 54, flags: [], time: 0.1)
+        #expect(logic.flagsChanged(keyCode: 54, flags: rightCommand, time: 0.3) == .handsFree)
+        // Soltar a tecla não termina, e digitar no meio da fala também não.
+        #expect(logic.flagsChanged(keyCode: 54, flags: [], time: 0.4) == nil)
+        #expect(logic.keyDown(keyCode: 0) == nil)
+        // ⌘C com o ⌘ direito também não.
+        #expect(logic.flagsChanged(keyCode: 54, flags: rightCommand, time: 2) == nil)
+        #expect(logic.keyDown(keyCode: 8) == nil)
+        #expect(logic.flagsChanged(keyCode: 54, flags: [], time: 2.2) == nil)
+        #expect(logic.handsFree)
+        // Um toque isolado termina.
+        #expect(logic.flagsChanged(keyCode: 54, flags: rightCommand, time: 5) == nil)
+        #expect(logic.flagsChanged(keyCode: 54, flags: [], time: 5.1) == .release)
+        #expect(!logic.handsFree)
+    }
+
+    @Test func escapeCancelsHandsFree() {
+        var logic = HotkeyLogic()
+        _ = logic.flagsChanged(keyCode: 54, flags: rightCommand, time: 0)
+        _ = logic.flagsChanged(keyCode: 54, flags: [], time: 0.1)
+        _ = logic.flagsChanged(keyCode: 54, flags: rightCommand, time: 0.3)
+        _ = logic.flagsChanged(keyCode: 54, flags: [], time: 0.4)
+        #expect(logic.keyDown(keyCode: 53) == .cancel)
+        #expect(logic.flagsChanged(keyCode: 61, flags: rightOption, time: 2) == .press(.prompt))
+    }
+
     @Test func longFirstHoldIsNotATap() {
         var logic = HotkeyLogic()
         _ = logic.flagsChanged(keyCode: 61, flags: rightOption, time: 0)
