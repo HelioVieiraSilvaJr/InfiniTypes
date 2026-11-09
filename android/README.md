@@ -40,7 +40,10 @@ Requer o JDK 17 e o SDK do Android com a plataforma 36. Crie `local.properties` 
 cd android
 ./gradlew :core:test           # casos de conformidade, na JVM
 ./gradlew :app:assembleDebug   # APK em app/build/outputs/apk/debug
+adb install -r app/build/outputs/apk/debug/app-debug.apk   # no aparelho (Depuração USB) ou no emulador aberto
 ```
+
+Para testar sem aparelho, crie um emulador com Android 13 ou mais novo no Device Manager do Android Studio. O microfone do computador funciona no emulador quando a entrada de áudio do aparelho virtual está ligada.
 
 ## Estrutura
 

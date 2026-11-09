@@ -7,7 +7,8 @@ App da área de notificação para Windows 10 e 11, em C# com .NET 10 e WPF. Fun
 | Ditar um prompt | Segurar o **Ctrl direito** |
 | Ditar só limpando a fala, sem reestruturar | Segurar o **Shift direito** |
 | Revisar o texto selecionado por voz | Um toque rápido e segurar o **Ctrl direito** |
-| Cancelar o ditado | Qualquer outra tecla enquanto segura |
+| Ditar sem segurar (mãos livres) | Dois toques no **Shift direito**; um toque termina |
+| Cancelar o ditado | Qualquer outra tecla enquanto segura, ou Esc |
 
 O Alt direito fica de fora: no teclado ABNT2 ele é o AltGr, usado para digitar `/`, `?` e `°`.
 
@@ -38,6 +39,12 @@ Requer o [SDK do .NET 10](https://dotnet.microsoft.com/download).
 cd windows
 dotnet test                              # núcleo e casos de conformidade (roda em qualquer sistema)
 dotnet run --project src/InfiniTypes     # só no Windows
+```
+
+Para gerar a pasta que vai para outro PC (é o que a CI empacota no `.zip`):
+
+```powershell
+dotnet publish src\InfiniTypes -c Release -r win-x64 --self-contained -o publish   # win-arm64 nos PCs ARM
 ```
 
 O app WPF também compila no Mac e no Linux (`EnableWindowsTargeting`), o que basta para conferir o build. Para rodar, só no Windows.

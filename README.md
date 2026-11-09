@@ -42,7 +42,7 @@ O histórico, as preferências e o glossário (termos do seu projeto, para a tra
 O InfiniTypes não tem servidor nem assinatura. Cada pessoa usa a **própria chave da API da Anthropic**:
 
 1. Crie uma chave em [console.anthropic.com](https://console.anthropic.com/settings/keys).
-2. Cole a chave em **Preferências → Geral** no primeiro uso.
+2. Cole a chave nas **Preferências** do app (**Ajustes**, no celular), que abrem sozinhas no primeiro uso.
 
 A chave fica no cofre de senhas do sistema (Keychain, Gerenciador de Credenciais do Windows ou Android Keystore) e só é enviada para `api.anthropic.com`. O custo vai para a sua conta da Anthropic: com o Sonnet 5.5, um ditado típico custa menos de US$ 0,01 (estimativas por modelo em [`docs/PLANEJAMENTO.md`](docs/PLANEJAMENTO.md#10-custo-estimado)).
 
@@ -54,22 +54,70 @@ A chave fica no cofre de senhas do sistema (Keychain, Gerenciador de Credenciais
 
 ## Instalar
 
-Ainda não há versão publicada nas Releases.
+Ainda não há versão publicada nas [Releases](https://github.com/HelioVieiraSilvaJr/InfiniTypes/releases). Por enquanto, cada plataforma é compilada a partir do código; no Windows e no Android também dá para baixar o pacote pronto que a CI gera a cada commit (aba **Actions** → execução mais recente da plataforma → **Artifacts**; é preciso estar logado no GitHub).
 
-**macOS** (requer macOS 26 e Xcode 26; na primeira transcrição, o app baixa o modelo de voz, ~630 MB):
+Primeiro, baixe o código:
 
 ```bash
-brew install xcodegen
 git clone https://github.com/HelioVieiraSilvaJr/InfiniTypes.git
-cd InfiniTypes/apple
-make run
+cd InfiniTypes
 ```
 
-**iPhone:** `make ios-run` abre no simulador. Para o aparelho, abra `apple/InfiniTypes.xcodeproj` no Xcode, escolha o esquema `InfiniTypesiOS` e o seu time em Signing & Capabilities.
+### macOS
 
-**Windows:** baixe o `.zip` da última execução da CI "Windows" e siga [`windows/README.md`](windows/README.md).
+Requer macOS 26, [Xcode 26](https://apps.apple.com/app/xcode/id497799835) e o [XcodeGen](https://github.com/yonaskolb/XcodeGen) (`brew install xcodegen`).
 
-**Android:** baixe o APK da última execução da CI "Android" e siga [`android/README.md`](android/README.md).
+```bash
+cd apple
+make install   # compila e instala em /Applications/InfiniTypes.app
+```
+
+Na primeira abertura, o app pede o **Microfone** e a **Acessibilidade**. Depois, cole a chave da API nas Preferências, no menu do ícone na barra de menus. Na primeira transcrição, o app baixa o modelo de voz (~630 MB).
+
+`make run` é para o desenvolvimento: abre o build da pasta `apple/build/` sem tocar na cópia de /Applications.
+
+Para o macOS manter as permissões de um build para o outro, assine com o seu time da Apple (uma conta gratuita serve): veja [Assinatura em `CONTRIBUTING.md`](CONTRIBUTING.md#assinatura). Para instalar em outro Mac, `make dmg` gera o instalador em `apple/dist/`; no outro Mac, a primeira abertura pede **Ajustes → Privacidade e Segurança → Abrir Mesmo Assim**.
+
+### iPhone
+
+Requer um Mac com o Xcode 26 e o XcodeGen, um iPhone com iOS 26 e o [Modo de Desenvolvedor](https://developer.apple.com/documentation/xcode/enabling-developer-mode-on-a-device) ligado, e o seu time da Apple em `apple/Config/Signing.local.xcconfig` (veja [Assinatura](CONTRIBUTING.md#assinatura)). Com uma conta gratuita, o app instalado vale por 7 dias; depois, é só instalar de novo.
+
+```bash
+cd apple
+make ios-run                                     # no simulador
+make ios-device IOS_DEVICE="iPhone de Fulano"    # no aparelho pareado (nome em: xcrun devicectl list devices)
+```
+
+### Windows
+
+Requer Windows 10 ou 11. Para compilar, instale o [SDK do .NET 10](https://dotnet.microsoft.com/download) e o Git (`winget install Microsoft.DotNet.SDK.10 Git.Git`) e rode no PowerShell:
+
+```powershell
+cd windows
+dotnet publish src\InfiniTypes -c Release -r win-x64 --self-contained -o publish   # win-arm64 nos PCs ARM
+.\publish\InfiniTypes.exe
+```
+
+O pacote pronto da CI é o `InfiniTypes-windows`, com um `.zip` para x64 e outro para ARM64. Detalhes, SmartScreen e onde ficam os dados: [`windows/README.md`](windows/README.md).
+
+### Android
+
+Requer Android 13 ou mais novo. O pacote pronto da CI é o `InfiniTypes-android`, com o APK. Para compilar, instale o JDK 17 e o [SDK do Android](https://developer.android.com/studio) (o Android Studio já traz os dois) e rode:
+
+```bash
+cd android
+echo "sdk.dir=$HOME/Library/Android/sdk" > local.properties   # caminho do seu SDK
+./gradlew :app:assembleDebug
+adb install app/build/outputs/apk/debug/app-debug.apk         # aparelho com Depuração USB, ou emulador aberto
+```
+
+Também dá para abrir a pasta `android/` no Android Studio e usar o botão Run. Primeiros passos no aparelho: [`android/README.md`](android/README.md).
+
+### Problemas comuns
+
+- **Mac: "Conceda as permissões" com o Microfone e a Acessibilidade já ligados.** A permissão de Acessibilidade fica presa à assinatura do app que a recebeu. Em **Ajustes → Privacidade e Segurança → Acessibilidade**, selecione o InfiniTypes, remova com o botão **−** e permita de novo pelo app. Se um build novo for instalado com o app aberto, o app se reabre sozinho no próximo atalho.
+- **Windows: o SmartScreen bloqueia o app.** O app ainda não é assinado: **Mais informações → Executar assim mesmo**.
+- **Android: o teclado InfiniTypes não aparece.** Ative-o em **Configurações → Sistema → Teclado** (o nome do menu muda de fabricante para fabricante), ou pelo botão **Ativar** nos Ajustes do app.
 
 Assinatura, instalador do Mac e notarização: [`CONTRIBUTING.md`](CONTRIBUTING.md) e [`docs/DISTRIBUICAO.md`](docs/DISTRIBUICAO.md).
 

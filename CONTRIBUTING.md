@@ -9,9 +9,13 @@ Requisitos: macOS 26, Xcode 26 e [XcodeGen](https://github.com/yonaskolb/XcodeGe
 ```bash
 cd apple
 make test      # gera o projeto e roda os testes de unidade do Mac
-make run       # compila e abre o app do Mac
+make run       # compila e abre o app do Mac a partir da pasta build/
+make install   # compila em Release e instala em /Applications, para o uso do dia a dia
 make ios-run   # compila e abre o app do iPhone no simulador (IOS_SIM="iPhone 17" por padrão)
+make ios-device IOS_DEVICE="iPhone de Fulano"   # instala no iPhone pareado (requer o time em Signing.local.xcconfig)
 ```
+
+Use o app de /Applications no dia a dia e o `make run` para testar mudanças. Assim, um build novo não substitui o app que está aberto. Se isso acontecer, o macOS nega o microfone e a Acessibilidade ao processo aberto até ele ser reaberto (o app detecta isso e se reabre no próximo atalho).
 
 O código comum ao Mac e ao iPhone fica em `apple/InfiniTypesCore/` e não pode usar AppKit nem UIKit.
 
