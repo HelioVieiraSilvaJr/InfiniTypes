@@ -1,0 +1,89 @@
+<Window x:Class="InfiniTypes.App.UI.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Preferências do InfiniTypes"
+        Width="660" Height="760" MinWidth="520" MinHeight="480"
+        WindowStartupLocation="CenterScreen"
+        Icon="/Assets/InfiniTypes.ico">
+    <Window.Resources>
+        <Style x:Key="Section" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="17" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Margin" Value="0,22,0,6" />
+        </Style>
+        <Style x:Key="Hint" TargetType="TextBlock">
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="Opacity" Value="0.75" />
+            <Setter Property="Margin" Value="0,0,0,8" />
+        </Style>
+    </Window.Resources>
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="28,8,28,28">
+            <TextBlock Style="{StaticResource Section}" Text="Chave da API da Anthropic" />
+            <TextBlock Style="{StaticResource Hint}">
+                Crie uma chave em <Hyperlink NavigateUri="https://console.anthropic.com/settings/keys" RequestNavigate="OpenLink">console.anthropic.com</Hyperlink>.
+                Ela fica no Gerenciador de Credenciais do Windows e só é enviada para api.anthropic.com. O custo vai para a sua conta da Anthropic.
+            </TextBlock>
+            <DockPanel>
+                <Button DockPanel.Dock="Right" Content="Salvar" Padding="16,4" Margin="8,0,0,0" Click="SaveKey" />
+                <PasswordBox x:Name="KeyBox" Padding="6,4" />
+            </DockPanel>
+            <DockPanel Margin="0,6,0,0">
+                <Button x:Name="RemoveKeyButton" DockPanel.Dock="Right" Content="Remover chave" Padding="12,3" Click="RemoveKey" />
+                <TextBlock x:Name="KeyStatus" VerticalAlignment="Center" TextWrapping="Wrap" />
+            </DockPanel>
+
+            <TextBlock Style="{StaticResource Section}" Text="Modelo" />
+            <TextBlock Style="{StaticResource Hint}" Text="Quem transforma a transcrição no prompt final. O Sonnet costuma ser o melhor equilíbrio entre qualidade, tempo e custo." />
+            <DockPanel>
+                <Button DockPanel.Dock="Right" Content="Atualizar lista" Padding="12,3" Margin="8,0,0,0" Click="RefreshModels" />
+                <ComboBox x:Name="ModelBox" SelectionChanged="ModelChanged" />
+            </DockPanel>
+            <TextBlock x:Name="PriceLabel" Style="{StaticResource Hint}" Margin="0,4,0,0" />
+            <DockPanel Margin="0,4,0,0">
+                <TextBlock Text="Esforço" VerticalAlignment="Center" Width="80" />
+                <ComboBox x:Name="EffortBox" Width="160" HorizontalAlignment="Left" SelectionChanged="EffortChanged" />
+            </DockPanel>
+
+            <TextBlock Style="{StaticResource Section}" Text="Glossário" />
+            <TextBlock Style="{StaticResource Hint}" Text="Termos com a grafia certa, um por linha (ex.: Supabase, useAuthStore). Eles orientam a transcrição e o refinamento." />
+            <TextBlock Text="Termos globais" Margin="0,0,0,4" />
+            <TextBox x:Name="GlobalTerms" AcceptsReturn="True" Height="96" TextWrapping="NoWrap"
+                     VerticalScrollBarVisibility="Auto" Padding="6,4" />
+            <TextBlock Text="Projetos" Margin="0,14,0,2" />
+            <TextBlock Style="{StaticResource Hint}" Text="Um projeto vale quando o nome dele aparece no título da janela em foco." />
+            <TextBlock x:Name="LastWindow" Style="{StaticResource Hint}" FontStyle="Italic" />
+            <ItemsControl x:Name="Projects">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border BorderThickness="1" BorderBrush="#33888888" CornerRadius="8" Padding="10" Margin="0,0,0,8">
+                            <StackPanel>
+                                <DockPanel>
+                                    <Button DockPanel.Dock="Right" Content="Remover" Padding="10,2" Margin="8,0,0,0"
+                                            Tag="{Binding}" Click="RemoveProject" />
+                                    <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Padding="6,3"
+                                             ToolTip="Nome como aparece no título da janela" />
+                                </DockPanel>
+                                <TextBox Text="{Binding Terms, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True"
+                                         Height="72" Margin="0,6,0,0" Padding="6,4" VerticalScrollBarVisibility="Auto"
+                                         ToolTip="Termos do projeto, um por linha" />
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <Button Content="Adicionar projeto" HorizontalAlignment="Left" Padding="12,3" Click="AddProject" />
+
+            <TextBlock Style="{StaticResource Section}" Text="Geral" />
+            <CheckBox x:Name="LaunchAtLogin" Content="Abrir o InfiniTypes ao entrar no Windows" Click="LaunchAtLoginChanged" />
+
+            <TextBlock Style="{StaticResource Section}" Text="Atalhos" />
+            <TextBlock TextWrapping="Wrap" LineHeight="22">
+                <Run FontWeight="SemiBold">Segurar o Ctrl direito</Run>: ditar um prompt.<LineBreak />
+                <Run FontWeight="SemiBold">Segurar o Shift direito</Run>: ditar só limpando a fala, sem reestruturar.<LineBreak />
+                <Run FontWeight="SemiBold">Um toque rápido e segurar o Ctrl direito</Run>: revisar por voz o texto selecionado.<LineBreak />
+                <Run FontWeight="SemiBold">Qualquer outra tecla enquanto segura</Run>: cancela o ditado.
+            </TextBlock>
+        </StackPanel>
+    </ScrollViewer>
+</Window>

@@ -210,3 +210,45 @@ public sealed class HistoryStoreTests : IDisposable
         if (Directory.Exists(_folder)) Directory.Delete(_folder, recursive: true);
     }
 }
+
+public sealed class AudioConverterTests
+{
+    [Fact]
+    public void MixesChannelsAndResamplesTo16Kilohertz()
+    {
+        // 1 s de um tom de 440 Hz em estéreo a 48 kHz.
+        var stereo = new float[48_000 * 2];
+        for (var i = 0; i < 48_000; i++)
+        {
+            var value = (float)Math.Sin(2 * Math.PI * 440 * i / 48_000);
+            stereo[i * 2] = value;
+            stereo[i * 2 + 1] = value;
+        }
+        var mono = Transcription.AudioConverter.Mono(stereo, 2);
+        Assert.Equal(48_000, mono.Length);
+
+        var resampled = Transcription.AudioConverter.Resample(mono, 48_000, 16_000);
+        Assert.Equal(16_000, resampled.Length);
+        // O tom continua com amplitude próxima de 1 depois do filtro.
+        Assert.InRange(resampled.Skip(100).Max(), 0.9f, 1.0f);
+    }
+
+    [Fact]
+    public void SilenceHasNoLevel()
+    {
+        Assert.Equal(0, Transcription.AudioConverter.Level(new float[1600]));
+        Assert.InRange(Transcription.AudioConverter.Level(Enumerable.Repeat(0.5f, 1600).ToArray()), 0.8f, 1f);
+    }
+}
+
+public sealed class DayGroupingTests
+{
+    [Fact]
+    public void TitlesTodayYesterdayAndOlderDays()
+    {
+        var now = new DateTime(2026, 11, 6, 15, 0, 0);
+        Assert.Equal("Hoje", DayGrouping.Title(new DateTime(2026, 11, 6, 9, 0, 0), now));
+        Assert.Equal("Ontem", DayGrouping.Title(new DateTime(2026, 11, 5, 22, 0, 0), now));
+        Assert.Equal("31 de outubro de 2026", DayGrouping.Title(new DateTime(2026, 10, 31, 8, 0, 0), now));
+    }
+}

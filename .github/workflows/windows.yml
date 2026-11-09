@@ -1,0 +1,54 @@
+name: Windows
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+    paths: ["windows/**", "shared/**", ".github/workflows/windows.yml"]
+  pull_request:
+    paths: ["windows/**", "shared/**", ".github/workflows/windows.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: windows
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: windows/global.json
+      - name: Testes de unidade e de conformidade
+        run: dotnet test
+      - name: Publicar (x64 e ARM64)
+        shell: pwsh
+        run: |
+          foreach ($rid in "win-x64", "win-arm64") {
+            dotnet publish src/InfiniTypes/InfiniTypes.csproj -c Release -r $rid --self-contained -o "publish/$rid"
+            Compress-Archive -Path "publish/$rid/*" -DestinationPath "publish/InfiniTypes-windows-$($rid.Substring(4)).zip"
+          }
+      - uses: actions/upload-artifact@v7
+        with:
+          name: InfiniTypes-windows
+          path: windows/publish/*.zip
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: InfiniTypes-windows
+      - name: Anexar à Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "$GITHUB_REF_NAME" *.zip --clobber -R "$GITHUB_REPOSITORY" || gh release create "$GITHUB_REF_NAME" *.zip --draft --title "$GITHUB_REF_NAME" -R "$GITHUB_REPOSITORY"

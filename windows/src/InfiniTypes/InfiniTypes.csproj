@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <!-- Só para o ícone da área de notificação (NotifyIcon), que o WPF não tem -->
+    <UseWindowsForms>true</UseWindowsForms>
+    <RootNamespace>InfiniTypes.App</RootNamespace>
+    <AssemblyName>InfiniTypes</AssemblyName>
+    <ApplicationIcon>Assets\InfiniTypes.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <RuntimeIdentifiers>win-x64;win-arm64</RuntimeIdentifiers>
+    <!-- Exigido pelo LibraryImport -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <!-- O DPI fica no app.manifest, que é como o WPF configura (o aviso é do Windows Forms) -->
+    <NoWarn>$(NoWarn);WFO0003</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Evita conflitos de nomes entre WPF e Windows Forms (Application, MessageBox…) -->
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
+    <Using Include="System.IO" />
+    <Using Include="System.Net.Http" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\InfiniTypes.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NAudio.Wasapi" />
+    <PackageReference Include="Whisper.net" />
+    <PackageReference Include="Whisper.net.Runtime" />
+    <PackageReference Include="Whisper.net.Runtime.Vulkan" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\InfiniTypes.Core\InfiniTypes.Core.csproj" />
+  </ItemGroup>
+
+</Project>
