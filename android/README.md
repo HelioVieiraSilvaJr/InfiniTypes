@@ -18,7 +18,7 @@ Em aparelhos sem reconhecimento offline, dá para permitir o reconhecimento pela
 
 ## Instalar
 
-1. Baixe o `app-debug.apk` da última execução da CI "Android" (ou das [Releases](https://github.com/HelioVieiraSilvaJr/InfiniTypes/releases), quando houver).
+1. Baixe o `InfiniTypes-android-<versão>.apk` da [última versão](https://github.com/HelioVieiraSilvaJr/InfiniTypes/releases/latest), ou o `app-debug.apk` da última execução da CI "Android". O APK ainda tem assinatura de testes: para instalar uma versão nova, desinstale a anterior antes.
 2. Abra o arquivo no Android e permita a instalação de fontes desconhecidas para o navegador ou o gerenciador de arquivos.
 3. No app, cole a sua chave da API da Anthropic em **Ajustes**, ative o teclado e, se quiser, adicione o bloco às Configurações Rápidas.
 

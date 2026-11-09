@@ -54,9 +54,11 @@ A chave fica no cofre de senhas do sistema (Keychain, Gerenciador de Credenciais
 
 ## Instalar
 
-Ainda não há versão publicada nas [Releases](https://github.com/HelioVieiraSilvaJr/InfiniTypes/releases). Por enquanto, cada plataforma é compilada a partir do código; no Windows e no Android também dá para baixar o pacote pronto que a CI gera a cada commit (aba **Actions** → execução mais recente da plataforma → **Artifacts**; é preciso estar logado no GitHub).
+**Pacotes prontos:** a [última versão](https://github.com/HelioVieiraSilvaJr/InfiniTypes/releases/latest) traz o `.dmg` do Mac, os `.zip` do Windows e o APK do Android, com as instruções de cada um. O iPhone não tem pacote: o app é instalado a partir do código, pelo Mac.
 
-Primeiro, baixe o código:
+Os pacotes ainda não passam pela verificação da Apple nem da Microsoft, por isso o sistema avisa na primeira abertura (veja [Problemas comuns](#problemas-comuns)). Para ter a versão mais recente do código, compile você mesmo. A CI também gera pacotes do Windows e do Android a cada commit (aba **Actions** → execução mais recente da plataforma → **Artifacts**; é preciso estar logado no GitHub).
+
+Para compilar, primeiro baixe o código:
 
 ```bash
 git clone https://github.com/HelioVieiraSilvaJr/InfiniTypes.git
@@ -116,6 +118,7 @@ Também dá para abrir a pasta `android/` no Android Studio e usar o botão Run.
 ### Problemas comuns
 
 - **Mac: "Conceda as permissões" com o Microfone e a Acessibilidade já ligados.** A permissão de Acessibilidade fica presa à assinatura do app que a recebeu. Em **Ajustes → Privacidade e Segurança → Acessibilidade**, selecione o InfiniTypes, remova com o botão **−** e permita de novo pelo app. Se um build novo for instalado com o app aberto, o app se reabre sozinho no próximo atalho.
+- **Mac: "Não foi possível verificar" ao abrir o app baixado.** Em **Ajustes → Privacidade e Segurança**, clique em **Abrir Mesmo Assim**.
 - **Windows: o SmartScreen bloqueia o app.** O app ainda não é assinado: **Mais informações → Executar assim mesmo**.
 - **Android: o teclado InfiniTypes não aparece.** Ative-o em **Configurações → Sistema → Teclado** (o nome do menu muda de fabricante para fabricante), ou pelo botão **Ativar** nos Ajustes do app.
 

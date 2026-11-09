@@ -14,7 +14,7 @@ O Alt direito fica de fora: no teclado ABNT2 ele é o AltGr, usado para digitar 
 
 ## Instalar
 
-1. Baixe o `.zip` da sua arquitetura (x64 ou ARM64) nas [Releases](https://github.com/HelioVieiraSilvaJr/InfiniTypes/releases), ou nos artefatos da última execução da CI "Windows".
+1. Baixe o `.zip` da sua arquitetura (x64 ou ARM64) na [última versão](https://github.com/HelioVieiraSilvaJr/InfiniTypes/releases/latest), ou nos artefatos da última execução da CI "Windows".
 2. Extraia numa pasta sua (por exemplo, `%LOCALAPPDATA%\Programs\InfiniTypes`) e abra o `InfiniTypes.exe`.
 3. O app ainda não é assinado, então o SmartScreen avisa na primeira vez: **Mais informações → Executar assim mesmo**.
 4. Cole a sua chave da API da Anthropic nas Preferências, que abrem sozinhas na primeira vez.
