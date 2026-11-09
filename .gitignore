@@ -22,3 +22,8 @@ obj/
 .vs/
 *.user
 TestResults/
+
+# Android (android/)
+.gradle/
+.kotlin/
+local.properties
