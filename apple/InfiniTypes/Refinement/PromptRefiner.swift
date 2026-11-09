@@ -28,42 +28,52 @@ protocol PromptRefiner {
 
 /// Transforma a transcrição bruta no texto final usando o modelo escolhido nas preferências.
 final class ClaudeRefiner: PromptRefiner {
-    enum RevisionFormat {
+    enum RevisionFormat: CaseIterable {
         /// Lista de alterações aplicadas localmente: rápida, e o resto do texto fica intacto.
         case edits
         /// Texto completo reescrito, a reserva quando as alterações não casam com o original.
         case fullText
 
-        var instructions: String {
+        /// Instruções que entram no lugar de `{{formato}}` no prompt da revisão.
+        var instructionsResource: String {
             switch self {
-            case .edits:
-                """
-                Responda com a lista de alterações no esquema JSON pedido. Cada alteração tem:
-
-                - `original`: um trecho copiado literalmente do texto original, com a mesma pontuação, espaços e quebras de linha, e longo o bastante para aparecer uma única vez no texto.
-                - `revised`: o que deve ficar no lugar desse trecho.
-
-                Para acrescentar algo, use como `original` o trecho vizinho (por exemplo, o item da lista ou a frase onde o detalhe entra) e repita-o em `revised` junto com o acréscimo. Faça uma alteração por ponto do texto, sem trechos sobrepostos. Se a fala não pedir nenhuma alteração, devolva a lista vazia.
-                """
-            case .fullText:
-                "Responda apenas com o texto completo já revisado, pronto para substituir o original: sem preâmbulo, sem comentários e sem aspas em volta."
+            case .edits: "RevisionFormatEdits"
+            case .fullText: "RevisionFormatFullText"
             }
         }
     }
 
     private let settings: AppSettings
     private let systemPrompts: [DictationMode: String]
+    /// Prompt da revisão já com as instruções de cada formato.
+    private let revisionPrompts: [RevisionFormat: String]
 
     init(settings: AppSettings) {
         self.settings = settings
         var prompts: [DictationMode: String] = [:]
-        for mode in [DictationMode.prompt, .literal, .revision] {
-            let url = Bundle.main.url(forResource: mode.systemPromptResource, withExtension: "md")
-            let text = url.flatMap { try? String(contentsOf: $0, encoding: .utf8) }
-            assert(text?.isEmpty == false, "\(mode.systemPromptResource).md não foi incluído no bundle")
-            prompts[mode] = text ?? ""
+        for mode in [DictationMode.prompt, .literal] {
+            prompts[mode] = Self.bundledPrompt(mode.systemPromptResource)
         }
         systemPrompts = prompts
+        let template = Self.bundledPrompt(DictationMode.revision.systemPromptResource)
+        var revision: [RevisionFormat: String] = [:]
+        for format in RevisionFormat.allCases {
+            revision[format] = Self.revisionPrompt(template: template,
+                                                   instructions: Self.bundledPrompt(format.instructionsResource))
+        }
+        revisionPrompts = revision
+    }
+
+    private static func bundledPrompt(_ resource: String) -> String {
+        let url = Bundle.main.url(forResource: resource, withExtension: "md")
+        let text = url.flatMap { try? String(contentsOf: $0, encoding: .utf8) }
+        assert(text?.isEmpty == false, "\(resource).md não foi incluído no bundle")
+        return text ?? ""
+    }
+
+    static func revisionPrompt(template: String, instructions: String) -> String {
+        template.replacingOccurrences(of: "{{formato}}",
+                                      with: instructions.trimmingCharacters(in: .whitespacesAndNewlines))
     }
 
     func refine(transcript: String, context: DictationContext, mode: DictationMode,
@@ -81,13 +91,13 @@ final class ClaudeRefiner: PromptRefiner {
                 vocabulary: [String]) async throws -> RevisionResult {
         let client = try Self.client()
         let model = ModelCatalog.model(id: settings.modelID)
-        let template = systemPrompts[.revision] ?? ""
         var inputTokens = 0
         var outputTokens = 0
 
         if model.supportsEffort {
-            let request = Self.makeRevisionRequest(model: model, effort: settings.effort, template: template,
-                                                   format: .edits, selection: selection, dictation: dictation,
+            let request = Self.makeRevisionRequest(model: model, effort: settings.effort,
+                                                   systemPrompt: revisionPrompts[.edits] ?? "", format: .edits,
+                                                   selection: selection, dictation: dictation,
                                                    context: context, vocabulary: vocabulary)
             let response = try Self.text(of: try await client.createMessage(request, timeout: 60))
             inputTokens += response.usage.inputTokens ?? 0
@@ -103,8 +113,9 @@ final class ClaudeRefiner: PromptRefiner {
             }
         }
 
-        let request = Self.makeRevisionRequest(model: model, effort: settings.effort, template: template,
-                                               format: .fullText, selection: selection, dictation: dictation,
+        let request = Self.makeRevisionRequest(model: model, effort: settings.effort,
+                                               systemPrompt: revisionPrompts[.fullText] ?? "", format: .fullText,
+                                               selection: selection, dictation: dictation,
                                                context: context, vocabulary: vocabulary)
         let response = try Self.text(of: try await client.createMessage(request, timeout: 120))
         // A resposta vem sem espaços nas pontas; mantém os da seleção, como uma quebra de linha final.
@@ -131,9 +142,9 @@ final class ClaudeRefiner: PromptRefiner {
         )
     }
 
-    static func makeRevisionRequest(model: RefinementModel, effort: Effort, template: String, format: RevisionFormat,
-                                    selection: String, dictation: String, context: DictationContext,
-                                    vocabulary: [String]) -> AnthropicClient.MessageRequest {
+    static func makeRevisionRequest(model: RefinementModel, effort: Effort, systemPrompt: String,
+                                    format: RevisionFormat, selection: String, dictation: String,
+                                    context: DictationContext, vocabulary: [String]) -> AnthropicClient.MessageRequest {
         var outputConfig: AnthropicClient.MessageRequest.OutputConfig?
         if model.supportsEffort {
             outputConfig = .init(effort: effort.rawValue,
@@ -153,8 +164,7 @@ final class ClaudeRefiner: PromptRefiner {
         return AnthropicClient.MessageRequest(
             model: model.id,
             maxTokens: 16_000,
-            system: [.init(text: template.replacingOccurrences(of: "{{formato}}", with: format.instructions),
-                           cacheControl: .init())],
+            system: [.init(text: systemPrompt, cacheControl: .init())],
             messages: [.init(role: "user", content: message)],
             outputConfig: outputConfig,
             fallbacks: model.supportsServerFallback ? "default" : nil

@@ -249,7 +249,8 @@ InfiniTypes/
 │   │   └── Resources/              # Info.plist, .entitlements, AppIcon.icon, Assets.xcassets
 │   └── InfiniTypesTests/           # testes de unidade (make test)
 ├── shared/
-│   └── prompts/                    # SystemPrompt, LiteralPrompt e RevisionPrompt
+│   ├── prompts/                    # SystemPrompt, LiteralPrompt, RevisionPrompt e os dois formatos da revisão
+│   └── conformance/                # casos lidos pelos testes de todas as plataformas
 └── docs/                           # PLANEJAMENTO.md, DISTRIBUICAO.md
 ```
 
@@ -297,7 +298,7 @@ No Mac, a única dependência externa é o **WhisperKit**, fixado numa versão e
 - Assinatura ad hoc por padrão, para qualquer pessoa compilar. Quem tem conta da Apple põe o próprio time em `Config/Signing.local.xcconfig`, fora do git.
 - Os testes usam uma pasta temporária e não tocam mais no histórico real. As chaves falsas dos testes são montadas por partes, para não disparar detectores de segredos.
 - O log de falha da revisão deixou de registrar trechos do texto do usuário.
-- **Status:** ✅ concluído (08/11/2026). 34 testes passando com assinatura ad hoc e com o time. Migração verificada no Mac de desenvolvimento: 23 ditados, modelo de voz, preferências e chave da API. A CI só roda depois de o repositório ir para o GitHub.
+- **Status:** ✅ concluído (08/11/2026). 34 testes passando com assinatura ad hoc e com o time. Migração verificada no Mac de desenvolvimento: 23 ditados, modelo de voz, preferências e chave da API. Repositório público no GitHub, com a CI do macOS passando.
 
 ### Fase 3 — Recursos avançados
 - Modo mãos-livres (atalho a definir).
@@ -310,6 +311,7 @@ Mesmo uso do Mac: atalho segurado, fala livre e prompt colado no campo em foco.
 
 - **Stack:** C# com .NET 10 e WinUI 3. O app fica na área de notificação, sem janela principal.
 - **Antes de começar:** extrair os casos de conformidade para `shared/conformance/` (detector de segredos, filtro de alucinações, escolha do projeto, aplicação das alterações da revisão e montagem da requisição) e fazer os testes do Mac lerem esses arquivos. Os testes do Windows usam os mesmos.
+  - ✅ Feito em 09/11/2026: 54 casos em cinco arquivos, descritos em `shared/README.md`. As instruções de formato da revisão saíram do código Swift para `shared/prompts/`. Na extração, o detector parou de apontar as chaves da Anthropic também como chaves da OpenAI.
 - **Atalho:** gancho de teclado de baixo nível (`WH_KEYBOARD_LL`) para a tecla segurada e o toque duplo. No teclado ABNT2, o Alt direito é o AltGr, usado para digitar `/`, `?` e `°`. Por isso o padrão no Windows é o **Ctrl direito**, configurável.
 - **Áudio:** WASAPI, convertido para 16 kHz mono.
 - **Transcrição local:** whisper.cpp pelo Whisper.net, com o large-v3-turbo quantizado. GPU quando houver (CUDA ou Vulkan), CPU como reserva.

@@ -5,8 +5,8 @@ struct AnthropicClient {
     let apiKey: String
     var session: URLSession = .shared
 
-    private static let baseURL = URL(string: "https://api.anthropic.com/v1")!
-    private static let apiVersion = "2026-10-21"
+    static let baseURL = URL(string: "https://api.anthropic.com/v1")!
+    static let apiVersion = "2026-10-21"
     private static let fallbackBeta = "server-side-fallback-2026-07-01"
 
     // MARK: Messages
@@ -83,11 +83,16 @@ struct AnthropicClient {
     func createMessage(_ body: MessageRequest, timeout: TimeInterval = 45) async throws -> MessageResponse {
         var request = makeRequest(path: "messages", method: "POST")
         request.timeoutInterval = timeout
-        if body.fallbacks != nil {
-            request.setValue(Self.fallbackBeta, forHTTPHeaderField: "anthropic-beta")
+        if let beta = Self.betaHeader(for: body) {
+            request.setValue(beta, forHTTPHeaderField: "anthropic-beta")
         }
         request.httpBody = try Self.encoder.encode(body)
         return try await send(request, retryingOnce: true)
+    }
+
+    /// Valor do cabeçalho `anthropic-beta`, quando a requisição usa um recurso em beta.
+    static func betaHeader(for body: MessageRequest) -> String? {
+        body.fallbacks != nil ? fallbackBeta : nil
     }
 
     // MARK: Models

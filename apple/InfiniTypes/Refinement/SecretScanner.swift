@@ -4,7 +4,8 @@ import Foundation
 enum SecretScanner {
     private static let patterns: [(name: String, regex: Regex<Substring>)] = [
         ("chave da Anthropic", /sk-ant-[A-Za-z0-9_\-]{20,}/),
-        ("chave da OpenAI", /sk-(?:proj-)?[A-Za-z0-9_\-]{32,}/),
+        // Sem o `(?!ant-)`, toda chave da Anthropic também seria apontada como da OpenAI.
+        ("chave da OpenAI", /sk-(?!ant-)(?:proj-)?[A-Za-z0-9_\-]{32,}/),
         ("chave da AWS", /\b(?:AKIA|ASIA)[0-9A-Z]{16}\b/),
         ("token do GitHub", /\b(?:gh[pousr]_[A-Za-z0-9]{36,}|github_pat_[A-Za-z0-9_]{22,})/),
         ("token do Slack", /\bxox[abprs]-[A-Za-z0-9\-]{10,}/),

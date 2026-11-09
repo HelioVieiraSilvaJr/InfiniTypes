@@ -1,0 +1,185 @@
+{
+  "api": {
+    "messages_url": "https://api.anthropic.com/v1/messages",
+    "anthropic_version": "2026-10-21"
+  },
+  "cases": [
+    {
+      "name": "Opus: esforço, cache e fallback do servidor",
+      "kind": "refinement",
+      "model": "claude-opus-5-5",
+      "effort": "low",
+      "system_prompt": "SISTEMA",
+      "transcript": "crie um teste",
+      "context": { "app": "Terminal", "window_title": "api — zsh" },
+      "vocabulary": [],
+      "expected_beta": "server-side-fallback-2026-07-01",
+      "expected_body": {
+        "model": "claude-opus-5-5",
+        "max_tokens": 16000,
+        "system": [{ "type": "text", "text": "SISTEMA", "cache_control": { "type": "ephemeral" } }],
+        "messages": [{ "role": "user", "content": "<contexto>\nApp: Terminal\nJanela: api — zsh\n</contexto>\n\n<transcricao>\ncrie um teste\n</transcricao>" }],
+        "output_config": { "effort": "low" },
+        "fallbacks": "default"
+      }
+    },
+    {
+      "name": "Sonnet com projeto e glossário",
+      "kind": "refinement",
+      "model": "claude-sonnet-5-5",
+      "effort": "high",
+      "system_prompt": "SISTEMA",
+      "transcript": "use o supa base",
+      "context": { "app": "Cursor", "window_title": "db.ts — minha-api", "project": "minha-api" },
+      "vocabulary": ["Supabase", "Drizzle"],
+      "expected_beta": "server-side-fallback-2026-07-01",
+      "expected_body": {
+        "model": "claude-sonnet-5-5",
+        "max_tokens": 16000,
+        "system": [{ "type": "text", "text": "SISTEMA", "cache_control": { "type": "ephemeral" } }],
+        "messages": [{ "role": "user", "content": "<contexto>\nApp: Cursor\nJanela: db.ts — minha-api\nProjeto: minha-api\n</contexto>\n\n<glossario>\nSupabase\nDrizzle\n</glossario>\n\n<transcricao>\nuse o supa base\n</transcricao>" }],
+        "output_config": { "effort": "high" },
+        "fallbacks": "default"
+      }
+    },
+    {
+      "name": "Haiku: sem fallback do servidor e contexto desconhecido",
+      "kind": "refinement",
+      "model": "claude-haiku-5-5",
+      "effort": "medium",
+      "system_prompt": "SISTEMA",
+      "transcript": "crie um teste",
+      "context": {},
+      "vocabulary": [],
+      "expected_beta": null,
+      "expected_body": {
+        "model": "claude-haiku-5-5",
+        "max_tokens": 16000,
+        "system": [{ "type": "text", "text": "SISTEMA", "cache_control": { "type": "ephemeral" } }],
+        "messages": [{ "role": "user", "content": "<contexto>\n(desconhecido)\n</contexto>\n\n<transcricao>\ncrie um teste\n</transcricao>" }],
+        "output_config": { "effort": "medium" }
+      }
+    },
+    {
+      "name": "Fable",
+      "kind": "refinement",
+      "model": "claude-fable-5-1",
+      "effort": "low",
+      "system_prompt": "SISTEMA",
+      "transcript": "crie um teste",
+      "context": {},
+      "vocabulary": [],
+      "expected_beta": "server-side-fallback-2026-07-01",
+      "expected_body": {
+        "model": "claude-fable-5-1",
+        "max_tokens": 16000,
+        "system": [{ "type": "text", "text": "SISTEMA", "cache_control": { "type": "ephemeral" } }],
+        "messages": [{ "role": "user", "content": "<contexto>\n(desconhecido)\n</contexto>\n\n<transcricao>\ncrie um teste\n</transcricao>" }],
+        "output_config": { "effort": "low" },
+        "fallbacks": "default"
+      }
+    },
+    {
+      "name": "modelo desconhecido: requisição mínima",
+      "kind": "refinement",
+      "model": "claude-modelo-futuro",
+      "effort": "low",
+      "system_prompt": "SISTEMA",
+      "transcript": "crie um teste",
+      "context": {},
+      "vocabulary": [],
+      "expected_beta": null,
+      "expected_body": {
+        "model": "claude-modelo-futuro",
+        "max_tokens": 16000,
+        "system": [{ "type": "text", "text": "SISTEMA", "cache_control": { "type": "ephemeral" } }],
+        "messages": [{ "role": "user", "content": "<contexto>\n(desconhecido)\n</contexto>\n\n<transcricao>\ncrie um teste\n</transcricao>" }]
+      }
+    },
+    {
+      "name": "revisão por alterações, com esquema JSON",
+      "kind": "revision",
+      "model": "claude-sonnet-5-5",
+      "effort": "low",
+      "format": "edits",
+      "system_prompt": "REVISÃO",
+      "selection": "Crie um endpoint.",
+      "transcript": "valide com zod",
+      "context": { "app": "Pages" },
+      "vocabulary": ["Zod"],
+      "expected_beta": "server-side-fallback-2026-07-01",
+      "expected_body": {
+        "model": "claude-sonnet-5-5",
+        "max_tokens": 16000,
+        "system": [{ "type": "text", "text": "REVISÃO", "cache_control": { "type": "ephemeral" } }],
+        "messages": [{ "role": "user", "content": "<contexto>\nApp: Pages\n</contexto>\n\n<glossario>\nZod\n</glossario>\n\n<texto_original>\nCrie um endpoint.\n</texto_original>\n\n<fala>\nvalide com zod\n</fala>" }],
+        "output_config": {
+          "effort": "low",
+          "format": {
+            "type": "json_schema",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "edits": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "original": { "type": "string" },
+                      "revised": { "type": "string" }
+                    },
+                    "required": ["original", "revised"],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "required": ["edits"],
+              "additionalProperties": false
+            }
+          }
+        },
+        "fallbacks": "default"
+      }
+    },
+    {
+      "name": "revisão pelo texto completo",
+      "kind": "revision",
+      "model": "claude-opus-5-5",
+      "effort": "low",
+      "format": "full_text",
+      "system_prompt": "REVISÃO",
+      "selection": "Crie um endpoint.",
+      "transcript": "valide com zod",
+      "context": {},
+      "vocabulary": [],
+      "expected_beta": "server-side-fallback-2026-07-01",
+      "expected_body": {
+        "model": "claude-opus-5-5",
+        "max_tokens": 16000,
+        "system": [{ "type": "text", "text": "REVISÃO", "cache_control": { "type": "ephemeral" } }],
+        "messages": [{ "role": "user", "content": "<contexto>\n(desconhecido)\n</contexto>\n\n<texto_original>\nCrie um endpoint.\n</texto_original>\n\n<fala>\nvalide com zod\n</fala>" }],
+        "output_config": { "effort": "low" },
+        "fallbacks": "default"
+      }
+    },
+    {
+      "name": "revisão com modelo desconhecido",
+      "kind": "revision",
+      "model": "claude-modelo-futuro",
+      "effort": "low",
+      "format": "full_text",
+      "system_prompt": "REVISÃO",
+      "selection": "Crie um endpoint.",
+      "transcript": "valide com zod",
+      "context": {},
+      "vocabulary": [],
+      "expected_beta": null,
+      "expected_body": {
+        "model": "claude-modelo-futuro",
+        "max_tokens": 16000,
+        "system": [{ "type": "text", "text": "REVISÃO", "cache_control": { "type": "ephemeral" } }],
+        "messages": [{ "role": "user", "content": "<contexto>\n(desconhecido)\n</contexto>\n\n<texto_original>\nCrie um endpoint.\n</texto_original>\n\n<fala>\nvalide com zod\n</fala>" }]
+      }
+    }
+  ]
+}

@@ -4,8 +4,25 @@ O que vale igual em todas as plataformas. Cada app (macOS, Windows, iPhone, Andr
 
 | Pasta | Conteúdo |
 |---|---|
-| `prompts/` | System prompts do refinamento: `SystemPrompt.md` (prompt), `LiteralPrompt.md` (literal) e `RevisionPrompt.md` (revisão, com o marcador `{{formato}}`) |
+| `prompts/` | System prompts do refinamento: `SystemPrompt.md` (prompt), `LiteralPrompt.md` (literal) e `RevisionPrompt.md` (revisão). O marcador `{{formato}}` da revisão recebe o conteúdo de `RevisionFormatEdits.md` (lista de alterações) ou de `RevisionFormatFullText.md` (texto completo, a reserva), sem os espaços e quebras de linha das pontas |
+| `conformance/` | Casos de conformidade: entradas e saídas esperadas para as regras que cada plataforma implementa no próprio código |
 
-No macOS, o `apple/project.yml` inclui `prompts/` como recurso do app.
+No macOS, o `apple/project.yml` inclui `prompts/` como recurso do app e `conformance/` como recurso dos testes.
 
-Antes da versão para Windows, entram aqui os **casos de conformidade**: arquivos JSON com entradas e saídas esperadas para o detector de segredos, o filtro de alucinações, a escolha do projeto pelo título da janela, a aplicação das alterações da revisão e a montagem da requisição para a API. Os testes de cada plataforma leem os mesmos casos, para as implementações não divergirem.
+## Casos de conformidade
+
+Os testes de cada plataforma leem os mesmos arquivos, para as implementações não divergirem. Ao mudar uma dessas regras, altere ou acrescente o caso aqui primeiro. Depois, ajuste cada plataforma até os testes passarem.
+
+| Arquivo | Regra | Cada caso tem |
+|---|---|---|
+| `secrets.json` | Detector de segredos, antes de enviar uma seleção para a API | `text` e `findings`: os nomes dos tipos de segredo encontrados, sem repetir, na ordem da lista de padrões |
+| `hallucinations.json` | Filtro de frases que o Whisper inventa no silêncio | `input` e `output` |
+| `projects.json` | Escolha do projeto do glossário pelo título da janela | `window_title`, `project` e `terms`, todos sobre o glossário do topo do arquivo |
+| `revision-edits.json` | Aplicação das alterações devolvidas pela revisão | `text`, `edits` e `result`, ou `error` (`not_found`, `ambiguous` ou `overlapping`) |
+| `requests.json` | Montagem da requisição para a API da Anthropic | As entradas (`kind`, `model`, `effort`, `format`, `system_prompt`, `selection`, `transcript`, `context`, `vocabulary`), o `expected_body` e o `expected_beta` (cabeçalho `anthropic-beta`). O `api` do topo traz o endereço e a versão da API |
+
+Detalhes:
+
+- **`text` em `secrets.json`** é uma lista de pedaços, juntados sem separador. As chaves falsas ficam partidas no arquivo para não disparar os detectores de segredos do GitHub e afins.
+- **`expected_body`** é comparado como JSON: a ordem das chaves não importa, e campos ausentes não podem aparecer na requisição.
+- **Os nomes em `findings`** são os que o app mostra ao recusar uma seleção, por isso precisam ser iguais em todas as plataformas.

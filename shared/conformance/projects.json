@@ -1,0 +1,43 @@
+{
+  "glossary": {
+    "global_terms": "Supabase\nuseEffect\n\n",
+    "projects": [
+      { "name": "api", "terms": "Fastify" },
+      { "name": "api-admin", "terms": "Prisma\nsupabase" },
+      { "name": "configuração", "terms": "  Zod  " },
+      { "name": "   ", "terms": "Ignorado" }
+    ]
+  },
+  "cases": [
+    {
+      "name": "o nome mais longo vence",
+      "window_title": "users.ts — API-Admin — Cursor",
+      "project": "api-admin",
+      "terms": ["Supabase", "useEffect", "Prisma"]
+    },
+    {
+      "name": "projeto de nome curto",
+      "window_title": "server.ts — api — Cursor",
+      "project": "api",
+      "terms": ["Supabase", "useEffect", "Fastify"]
+    },
+    {
+      "name": "título sem acento",
+      "window_title": "configuracao.yml — infra",
+      "project": "configuração",
+      "terms": ["Supabase", "useEffect", "Zod"]
+    },
+    {
+      "name": "nenhum projeto no título",
+      "window_title": "Notas",
+      "project": null,
+      "terms": ["Supabase", "useEffect"]
+    },
+    {
+      "name": "sem título",
+      "window_title": null,
+      "project": null,
+      "terms": ["Supabase", "useEffect"]
+    }
+  ]
+}

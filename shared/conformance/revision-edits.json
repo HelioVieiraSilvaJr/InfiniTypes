@@ -1,0 +1,58 @@
+{
+  "cases": [
+    {
+      "name": "aplica as alterações e mantém o resto",
+      "text": "Crie um endpoint de login em `auth.routes.ts`.\n\n- Recebe e-mail e senha.\n- Retorna um JWT.",
+      "edits": [
+        { "original": "- Retorna um JWT.", "revised": "- Retorna um JWT com expiração de 15 minutos.\n- Inclua testes." },
+        { "original": "e-mail e senha", "revised": "e-mail ou nome de usuário, e senha" }
+      ],
+      "result": "Crie um endpoint de login em `auth.routes.ts`.\n\n- Recebe e-mail ou nome de usuário, e senha.\n- Retorna um JWT com expiração de 15 minutos.\n- Inclua testes."
+    },
+    {
+      "name": "remove um trecho",
+      "text": "Crie um endpoint de login em `auth.routes.ts`.\n\n- Recebe e-mail e senha.\n- Retorna um JWT.",
+      "edits": [{ "original": "\n- Retorna um JWT.", "revised": "" }],
+      "result": "Crie um endpoint de login em `auth.routes.ts`.\n\n- Recebe e-mail e senha."
+    },
+    {
+      "name": "sem alterações",
+      "text": "Crie um endpoint de login em `auth.routes.ts`.\n\n- Recebe e-mail e senha.\n- Retorna um JWT.",
+      "edits": [],
+      "result": "Crie um endpoint de login em `auth.routes.ts`.\n\n- Recebe e-mail e senha.\n- Retorna um JWT."
+    },
+    {
+      "name": "trecho que não está no texto",
+      "text": "Crie um endpoint de login em `auth.routes.ts`.\n\n- Recebe e-mail e senha.\n- Retorna um JWT.",
+      "edits": [{ "original": "Retorna um token", "revised": "x" }],
+      "error": "not_found"
+    },
+    {
+      "name": "espaços diferentes não casam",
+      "text": "Crie um endpoint de login em `auth.routes.ts`.\n\n- Recebe e-mail e senha.\n- Retorna um JWT.",
+      "edits": [{ "original": "Retorna  um JWT.", "revised": "x" }],
+      "error": "not_found"
+    },
+    {
+      "name": "trecho vazio",
+      "text": "Crie um endpoint de login em `auth.routes.ts`.\n\n- Recebe e-mail e senha.\n- Retorna um JWT.",
+      "edits": [{ "original": "", "revised": "x" }],
+      "error": "not_found"
+    },
+    {
+      "name": "trecho repetido",
+      "text": "Crie um endpoint de login em `auth.routes.ts`.\n\n- Recebe e-mail e senha.\n- Retorna um JWT.",
+      "edits": [{ "original": "- R", "revised": "x" }],
+      "error": "ambiguous"
+    },
+    {
+      "name": "alterações sobrepostas",
+      "text": "Crie um endpoint de login em `auth.routes.ts`.\n\n- Recebe e-mail e senha.\n- Retorna um JWT.",
+      "edits": [
+        { "original": "e-mail e senha", "revised": "a" },
+        { "original": "senha.", "revised": "b" }
+      ],
+      "error": "overlapping"
+    }
+  ]
+}

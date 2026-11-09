@@ -42,6 +42,7 @@ Outros argumentos: `-literal YES` (modo literal), `-reviseFile <texto.txt>` (rev
 - Comentários explicam o porquê, não o quê.
 - **Testes:** Swift Testing (`@Test`). Lógica nova sem interface (regras, filtros, montagem de requisições) vem com teste.
 - **Prompts** (`shared/prompts/`) valem para todas as plataformas. Ao mudá-los, descreva no PR os ditados que você testou, com o antes e o depois.
+- **Regras comuns** (detector de segredos, filtro de alucinações, escolha do projeto, revisão e montagem da requisição) têm os casos em `shared/conformance/`, lidos pelos testes de todas as plataformas. Para mudar uma regra, mude primeiro o caso. Veja [`shared/README.md`](shared/README.md).
 
 ## Pull requests
 

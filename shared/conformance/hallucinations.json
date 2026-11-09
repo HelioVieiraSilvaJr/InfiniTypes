@@ -1,0 +1,21 @@
+{
+  "cases": [
+    { "name": "agradecimento isolado", "input": "Obrigado.", "output": "" },
+    { "name": "agradecimento com espaços", "input": "  obrigada!  ", "output": "" },
+    { "name": "despedida de vídeo", "input": "Obrigado por assistir!", "output": "" },
+    { "name": "inglês: agradecimento", "input": "Thank you.", "output": "" },
+    { "name": "inglês: you", "input": "You", "output": "" },
+    { "name": "marcação de música", "input": "[Música]", "output": "" },
+    { "name": "marcação de silêncio", "input": "[BLANK_AUDIO]", "output": "" },
+    { "name": "marcação antes da fala", "input": "[Música] Crie um teste de unidade", "output": "Crie um teste de unidade" },
+    { "name": "crédito de legenda isolado", "input": "Legendas pela comunidade Amara.org", "output": "" },
+    { "name": "crédito de legenda em espanhol", "input": "Subtítulos realizados por la comunidad de Amara.org", "output": "" },
+    { "name": "crédito de legenda em francês", "input": "Sous-titres réalisés par la communauté d'Amara.org", "output": "" },
+    { "name": "crédito de legenda no fim da fala", "input": "Crie um endpoint de login. Legendas pela comunidade Amara.org", "output": "Crie um endpoint de login." },
+    { "name": "crédito de legenda no meio da fala", "input": "Crie um endpoint Legenda Adriana Zanotto de login", "output": "Crie um endpoint de login" },
+    { "name": "vazio", "input": "", "output": "" },
+    { "name": "só pontuação", "input": "...", "output": "" },
+    { "name": "agradecimento dentro de fala real", "input": "Refatore o serviço de pagamentos e obrigado pela ajuda", "output": "Refatore o serviço de pagamentos e obrigado pela ajuda" },
+    { "name": "fala real que começa com tchau", "input": "Tchau para o modo antigo: remova a flag legacy", "output": "Tchau para o modo antigo: remova a flag legacy" }
+  ]
+}

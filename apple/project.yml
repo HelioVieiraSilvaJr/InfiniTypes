@@ -75,6 +75,10 @@ targets:
     platform: macOS
     sources:
       - path: InfiniTypesTests
+      # Casos de conformidade, os mesmos dos testes das outras plataformas
+      - path: ../shared/conformance
+        type: folder
+        buildPhase: resources
     dependencies:
       - target: InfiniTypes
     settings:
