@@ -1,6 +1,6 @@
 # InfiniTypes — Planejamento
 
-App de ditado que transforma fala livre em **prompts sólidos para IAs de codificação**. Projeto aberto (licença MIT), hoje no macOS e a caminho do Windows, do iPhone e do Android. No Mac, você segura um atalho, fala do jeito que pensa e, ao soltar, recebe um prompt limpo, objetivo e estruturado, colado onde está o cursor (Claude Code, Cursor, VS Code, terminal).
+App de ditado que transforma fala livre em **prompts sólidos para IAs de codificação**. Projeto aberto (licença MIT), com apps para macOS, Windows, iPhone e Android. No computador, você segura um atalho, fala do jeito que pensa e, ao soltar, recebe um prompt limpo, objetivo e estruturado, colado onde está o cursor (Claude Code, Cursor, VS Code, terminal).
 
 Inspirado nos princípios de ferramentas de ditado com IA, mas com outro objetivo: **não é um ditado genérico, é um compositor de prompts técnicos**.
 
@@ -10,9 +10,9 @@ Inspirado nos princípios de ferramentas de ditado com IA, mas com outro objetiv
 
 | Tema | Decisão |
 |---|---|
-| Plataformas | macOS 26+ (pronto). Depois, nesta ordem: Windows (Fase 4), iPhone (Fase 5) e Android (Fase 6) |
-| Stack | **Nativo por plataforma**: Swift 6 + SwiftUI + AppKit no macOS (projeto gerado com XcodeGen), Swift no iPhone, C#/.NET no Windows e Kotlin no Android. Prompts e casos de conformidade ficam em `shared/`, usados por todas |
-| Transcrição | **Local**. No Mac, WhisperKit com Whisper large-v3-turbo (Core ML) |
+| Plataformas | macOS 26+, Windows 10/11, iPhone com iOS 26+ e Android 13+. O macOS foi validado no uso real; nos outros três, o build, os testes e a interface foram validados, e falta o teste num aparelho de verdade |
+| Stack | **Nativo por plataforma**: Swift 6 + SwiftUI + AppKit no macOS (projeto gerado com XcodeGen), Swift + SwiftUI no iPhone (com o código comum em `apple/InfiniTypesCore`), C# com .NET 10 e WPF no Windows e Kotlin + Jetpack Compose no Android. Prompts e casos de conformidade ficam em `shared/`, usados por todas |
+| Transcrição | **Local**. Mac e iPhone: WhisperKit (large-v3-turbo; small quantizado nos iPhones com menos de 8 GB). Windows: whisper.cpp pelo Whisper.net. Android: o reconhecimento do próprio aparelho |
 | Refinamento | Claude via API, HTTP direto (não há SDK oficial em Swift). **Modelo selecionável** entre os modelos da Anthropic; padrão **Claude Opus 5.5** (`claude-opus-5-5`) |
 | Idioma de saída | **Português**; termos técnicos e identificadores ficam no original |
 | Entrega | **Colar direto** no campo em foco; você revisa e dá Enter |
@@ -41,7 +41,7 @@ Inspirado nos princípios de ferramentas de ditado com IA, mas com outro objetiv
 | Cancelar ditado em andamento | Qualquer outra tecla (ex.: Esc) enquanto segura o ⌥ | 1 |
 | Modo literal (só limpa, não reestrutura) | Segurar ⌘ direito | 2 ✅ |
 | Revisar o texto selecionado por voz | Toque rápido e segurar o ⌥ direito | ✅ |
-| Modo mãos-livres (ditados longos) | A definir (o toque duplo passou para a revisão) | 3 |
+| Modo mãos-livres (ditados longos) | Dois toques no ⌘ direito; um toque termina, Esc cancela | 3 ✅ |
 | Abrir o histórico | Pelo menu ou atalho global (a definir) | 1 |
 | Colar o último resultado de novo | Pelo menu ou atalho | 1 |
 
@@ -231,32 +231,32 @@ Se o Opus ficar lento demais na prática, basta trocar o modelo nas preferência
 ```
 InfiniTypes/
 ├── README.md · LICENSE · CONTRIBUTING.md · SECURITY.md
-├── .github/                        # CI do macOS, modelos de issue e de PR
+├── .github/                        # CI do macOS/iPhone, do Windows e do Android, modelos de issue e de PR
 ├── apple/
 │   ├── project.yml                 # XcodeGen → gera InfiniTypes.xcodeproj
 │   ├── Makefile                    # make build · test · run · dmg · notarize
 │   ├── Config/                     # Signing.xcconfig (ad hoc) + Signing.local.xcconfig de cada pessoa
 │   ├── InfiniTypes/
 │   │   ├── App/                    # InfiniTypesApp, AppDelegate, MenuBarContent
-│   │   ├── Core/                   # DictationCoordinator, DictationMode, PermissionsManager, Log
-│   │   ├── Input/                  # HotkeyMonitor, AudioRecorder
-│   │   ├── Transcription/          # Transcriber (protocolo), WhisperKitTranscriber, HallucinationFilter
+│   │   ├── Core/                   # DictationCoordinator, PermissionsManager
+│   │   ├── Input/                  # HotkeyMonitor (atalhos e mãos-livres)
 │   │   ├── Context/                # ContextCollector, SelectionReader, AppActivityTracker
-│   │   ├── Refinement/             # PromptRefiner, AnthropicClient, RevisionPatcher, SecretScanner, ModelCatalog
 │   │   ├── Output/                 # TextInserter, FocusDetector
 │   │   ├── UI/                     # HUDPanel, HistoryView, SettingsView, GlossarySettingsView, OnboardingView
-│   │   ├── Storage/                # KeychainStore, AppSettings, HistoryStore (SwiftData), Glossary, AppPaths, LegacyMigration
 │   │   └── Resources/              # Info.plist, .entitlements, AppIcon.icon, Assets.xcassets
+│   ├── InfiniTypesCore/            # código comum ao Mac e ao iPhone: refinamento, transcrição, gravação, histórico
+│   ├── InfiniTypesiOS/             # app do iPhone (ditado, histórico, ajustes, intenções dos Atalhos)
+│   ├── InfiniTypesControls/        # extensão do botão da Central de Controle
 │   └── InfiniTypesTests/           # testes de unidade (make test)
+├── windows/                        # InfiniTypes.Core (.NET 10), app WPF e testes (dotnet test)
+├── android/                        # core (Kotlin/JVM), app (Compose, teclado, bloco) e testes (./gradlew)
 ├── shared/
 │   ├── prompts/                    # SystemPrompt, LiteralPrompt, RevisionPrompt e os dois formatos da revisão
 │   └── conformance/                # casos lidos pelos testes de todas as plataformas
 └── docs/                           # PLANEJAMENTO.md, DISTRIBUICAO.md
 ```
 
-As pastas `windows/` e `android/` entram quando cada fase começar.
-
-No Mac, a única dependência externa é o **WhisperKit**, fixado numa versão exata. O resto é framework da Apple.
+Dependências externas, todas fixadas em versões exatas: **WhisperKit** (Mac e iPhone); **Whisper.net**, **NAudio.Wasapi** e **Microsoft.Data.Sqlite** (Windows); **AndroidX**, **Compose** e **kotlinx.coroutines** (Android). O resto é do sistema de cada plataforma.
 
 ---
 
@@ -301,9 +301,10 @@ No Mac, a única dependência externa é o **WhisperKit**, fixado numa versão e
 - **Status:** ✅ concluído (08/11/2026). 34 testes passando com assinatura ad hoc e com o time. Migração verificada no Mac de desenvolvimento: 23 ditados, modelo de voz, preferências e chave da API. Repositório público no GitHub, com a CI do macOS passando.
 
 ### Fase 3 — Recursos avançados
-- Modo mãos-livres (atalho a definir).
-- Transcrição em streaming durante a fala.
-- Iniciar com o macOS.
+- ✅ Modo mãos-livres: dois toques rápidos no ⌘ direito (Mac) ou no Shift direito (Windows) começam um ditado de prompt sem segurar a tecla. Só um toque isolado no atalho termina; digitar, usar ⌘C ou fazer uma maiúscula no meio da fala não encerra. O Esc cancela. No iPhone e no Android o ditado já é por toque (gravar e parar).
+- ✅ Iniciar com o sistema: no Mac pelo `SMAppService`, nas preferências; no Windows pela chave Run do usuário.
+- Transcrição em streaming durante a fala: **fica para depois**. O ganho (mostrar o texto enquanto fala e encurtar a espera depois de soltar) depende de medir latência e qualidade com voz real; sem isso, o risco é piorar a transcrição, que hoje leva ~1–2 s.
+- **Status:** mãos-livres e iniciar com o sistema ✅ (09/11/2026), com testes da máquina de estados do atalho no Mac (25 testes) e no Windows (81). Streaming pendente.
 
 ### Fase 4 — Windows
 
@@ -323,6 +324,8 @@ Mesmo uso do Mac: atalho segurado, fala livre e prompt colado no campo em foco.
 - **CI:** build e testes num executor Windows do GitHub Actions.
 - **Teste:** exige um Windows 11 de verdade ou uma máquina virtual (no Mac com Apple Silicon, Windows 11 ARM).
 - **Pronto quando:** no Windows 11, ditar no Claude Code ou no VS Code devolve o prompt colado em menos de ~5 s, e todo ditado aparece no histórico.
+- **Feito (09/11/2026):** app em `windows/`, com **WPF em vez de WinUI 3**. O WPF tem o ícone da área de notificação (pelo `NotifyIcon`), janelas que não recebem foco para o HUD e roda sem o Windows App Runtime; o WinUI 3 não tem nenhum dos três. O WPF também compila no Mac, o que permitiu conferir o build daqui. Literal no Shift direito. A gravação usa o `WasapiRecorder` do NAudio 3, com o Windows convertendo para 16 kHz mono. Distribuição por `.zip` (x64 e ARM64) gerado na CI, anexado às Releases nas tags `v*`; instalador assinado e winget ficam para depois.
+- **Status:** núcleo com 81 testes, incluindo os 54 casos de conformidade, passando no Mac e no executor Windows da CI. O app compila e é publicado na CI. **Falta o teste num Windows 11 de verdade**: atalho, microfone, colagem, seleção pela Automação da Interface e o download do modelo.
 
 ### Fase 5 — iPhone (iOS)
 
@@ -356,6 +359,14 @@ A ideia continua a mesma (fala livre → prompt sólido), mas a entrega muda. O 
 - TestFlight com teste interno, que dispensa a revisão da Apple. Exige os contratos ativos no App Store Connect.
 - Etapa 5b: a sessão de microfone em segundo plano precisa de justificativa clara se o app for para a App Store.
 
+**Feito (09/11/2026): etapa 5a**
+- Em vez de um pacote Swift, o código comum fica em `apple/InfiniTypesCore/` e entra nos dois apps pelo `project.yml`. O efeito é o mesmo, sem precisar marcar tudo como `public`; dá para virar pacote depois.
+- App `InfiniTypesiOS`: abas Ditar (gravar até tocar em parar, com o modo e o projeto do glossário), Histórico e Ajustes. O resultado vai para a área de transferência; na revisão, o texto copiado é o original.
+- Gatilhos: a intenção "Ditar no InfiniTypes" (Atalhos, Siri e Botão de Ação) e o botão da Central de Controle e da tela bloqueada (extensão `InfiniTypesControls`).
+- Transcrição: WhisperKit, com o large-v3-turbo nos iPhones com 8 GB ou mais e o small quantizado (216 MB) nos demais. A comparação com o SpeechAnalyzer continua pendente.
+- Mesmo bundle ID do Mac (`com.infinidim.InfiniTypes`), que deixa a porta aberta para uma compra universal.
+- **Status:** compila na CI e no Xcode, e a tela de ditado foi conferida no simulador do iOS 26. **Falta o teste no iPhone**: microfone, tempo de transcrição, Botão de Ação e Central de Controle. A etapa 5b (teclado) não foi começada.
+
 ### Fase 6 — Android
 - **Stack:** Kotlin + Jetpack Compose.
 - **Forma principal: teclado próprio** (`InputMethodService`). Diferente do iOS, o teclado do Android pode usar o microfone depois que o app recebe a permissão. O botão de ditado grava, e o texto entra no campo com `commitText`. A revisão lê a seleção com `getSelectedText` e a substitui.
@@ -364,6 +375,8 @@ A ideia continua a mesma (fala livre → prompt sólido), mas a entrega muda. O 
 - **Chave da API** cifrada com uma chave do Android Keystore. **Histórico** em Room (SQLite).
 - **Distribuição:** APK assinado nas Releases do GitHub; depois, Google Play e F-Droid.
 - **Pronto quando:** ditar pelo teclado no app do Claude ou no navegador e o prompt entrar no campo em menos de ~5 s.
+- **Feito (09/11/2026):** app em `android/`, com o teclado, o bloco "Ditar prompt" nas Configurações Rápidas e o app (aba Ditar). Decisões: o **reconhecimento do próprio aparelho** (`SpeechRecognizer` offline, Android 13+, com o glossário como dica) em vez do whisper.cpp, porque não precisa de código nativo nem de baixar um modelo grande; o reconhecimento pela rede só com permissão explícita nos Ajustes. Histórico em SQLite direto (sem Room, para não depender de geração de código). Chave cifrada com o Android Keystore. AGP 9.5, Gradle 9.9 e Kotlin 2.4, com o `compileSdk` 36: o Compose fica no BOM 2026.06, o último que não exige o SDK 37.
+- **Status:** núcleo passa nos casos de conformidade (JVM), o lint não acusa erros e o APK é gerado na CI. No emulador, o app abriu, o teclado apareceu e o reconhecimento pediu o pacote de português offline. **Falta o teste com voz num aparelho**. Distribuição na Play Store e no F-Droid ainda não foi feita (o APK da CI é de debug).
 
 ### Ideias futuras
 - Glossário automático extraído do repositório aberto (nomes de módulos, classes, funções).
@@ -410,8 +423,8 @@ A transcrição local tem **custo zero**.
 
 ## 11. Pontos ainda em aberto
 
-- Atalho do modo mãos-livres.
-- Windows: WinUI 3 ou WPF, e instalador MSIX ou clássico.
-- iOS: SpeechAnalyzer ou WhisperKit, e se o app do iPhone usa o mesmo bundle ID do Mac.
-- Android: whisper.cpp ou o reconhecimento do próprio aparelho.
+- Transcrição em streaming (Fase 3).
+- Windows: instalador assinado (MSIX ou clássico) e winget.
+- iOS: comparar o SpeechAnalyzer com o WhisperKit no aparelho; etapa 5b (teclado).
+- Android: comparar o reconhecimento do aparelho com o whisper.cpp; release assinado, Play Store e F-Droid.
 - Idiomas: hoje a interface e os prompts são só em português. Abrir para outros idiomas amplia o público do projeto.

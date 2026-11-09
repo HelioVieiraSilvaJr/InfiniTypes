@@ -7,7 +7,13 @@ O que vale igual em todas as plataformas. Cada app (macOS, Windows, iPhone, Andr
 | `prompts/` | System prompts do refinamento: `SystemPrompt.md` (prompt), `LiteralPrompt.md` (literal) e `RevisionPrompt.md` (revisão). O marcador `{{formato}}` da revisão recebe o conteúdo de `RevisionFormatEdits.md` (lista de alterações) ou de `RevisionFormatFullText.md` (texto completo, a reserva), sem os espaços e quebras de linha das pontas |
 | `conformance/` | Casos de conformidade: entradas e saídas esperadas para as regras que cada plataforma implementa no próprio código |
 
-No macOS, o `apple/project.yml` inclui `prompts/` como recurso do app e `conformance/` como recurso dos testes.
+Como cada plataforma usa estes arquivos:
+
+| Plataforma | `prompts/` | `conformance/` |
+|---|---|---|
+| macOS e iPhone | Recurso dos apps, pelo `apple/project.yml` | Recurso dos testes do Mac (`ConformanceTests.swift`) |
+| Windows | Recurso embutido na `InfiniTypes.Core.dll` | Copiado para a pasta dos testes (`ConformanceTests.cs`) |
+| Android | Recurso Java do módulo `core` | Lido pelos testes da JVM (`ConformanceTest.kt`) |
 
 ## Casos de conformidade
 
