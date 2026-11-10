@@ -5,7 +5,8 @@ import OSLog
 enum FocusResult: String {
     case editable
     case notEditable
-    /// A Accessibility não respondeu; na dúvida, o texto é colado (ele já está salvo no histórico).
+    /// A Accessibility não respondeu ou o app não informa o foco; na dúvida, o texto é colado
+    /// (ele já está salvo no histórico).
     case unknown
 }
 
@@ -77,7 +78,9 @@ enum FocusDetector {
         case .success:
             break
         case .noValue:
-            return (.notEditable, "nenhum elemento em foco")
+            let hasWindow = AX.value(appElement, kAXFocusedWindowAttribute).1 == .success
+            return (classifyWithoutFocusedElement(hasFocusedWindow: hasWindow, bundleID: app.bundleIdentifier),
+                    "nenhum elemento em foco, janela em foco: \(hasWindow ? "sim" : "não")")
         default:
             return (.unknown, "AXError \(error.rawValue)")
         }
@@ -97,5 +100,11 @@ enum FocusDetector {
         if hasTextSelection { return .editable }
         if bundleID == "com.apple.finder" { return .notEditable }
         return .unknown
+    }
+
+    /// O Codex e os apps Electron, como o Claude, não informam o elemento em foco mesmo com o cursor num
+    /// campo de texto. Sem esse elemento, só descarta a colagem quando nem janela há, ou no Finder.
+    static func classifyWithoutFocusedElement(hasFocusedWindow: Bool, bundleID: String?) -> FocusResult {
+        hasFocusedWindow && bundleID != "com.apple.finder" ? .unknown : .notEditable
     }
 }

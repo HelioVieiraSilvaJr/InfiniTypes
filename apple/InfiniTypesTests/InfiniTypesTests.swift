@@ -165,6 +165,15 @@ struct FocusDetectorTests {
         // O Pages informa o documento como área de rolagem.
         #expect(FocusDetector.classify(role: "AXScrollArea", hasTextSelection: false, bundleID: "com.apple.iWork.Pages") == .unknown)
     }
+
+    @Test func pastesWhenTheAppHidesTheFocusedElement() {
+        // O Codex e os apps Electron não informam o campo em foco, mas têm uma janela em foco.
+        #expect(FocusDetector.classifyWithoutFocusedElement(hasFocusedWindow: true, bundleID: "com.openai.codex") == .unknown)
+        #expect(FocusDetector.classifyWithoutFocusedElement(hasFocusedWindow: true, bundleID: "com.anthropic.claudefordesktop") == .unknown)
+        // Sem janela em foco, ou no Finder, não há onde colar.
+        #expect(FocusDetector.classifyWithoutFocusedElement(hasFocusedWindow: false, bundleID: "com.openai.codex") == .notEditable)
+        #expect(FocusDetector.classifyWithoutFocusedElement(hasFocusedWindow: true, bundleID: "com.apple.finder") == .notEditable)
+    }
 }
 
 struct DayGroupingTests {
