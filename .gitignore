@@ -15,6 +15,10 @@ xcuserdata/
 *.cer
 *.mobileprovision
 *.provisionprofile
+*.jks
+*.keystore
+*.pem
+*.pfx
 
 # .NET (windows/)
 bin/
