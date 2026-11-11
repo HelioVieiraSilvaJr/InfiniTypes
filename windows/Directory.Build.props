@@ -4,7 +4,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>latest</LangVersion>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <Version>0.1.0</Version>
+    <Version>0.1.1</Version>
     <Product>InfiniTypes</Product>
     <Copyright>Copyright (c) 2026 Helio Vieira da Silva Junior</Copyright>
     <NeutralLanguage>pt-BR</NeutralLanguage>
