@@ -365,7 +365,7 @@ A ideia continua a mesma (fala livre → prompt sólido), mas a entrega muda. O 
 
 **Feito (09/11/2026): etapa 5a**
 - Em vez de um pacote Swift, o código comum fica em `apple/InfiniTypesCore/` e entra nos dois apps pelo `project.yml`. O efeito é o mesmo, sem precisar marcar tudo como `public`; dá para virar pacote depois.
-- App `InfiniTypesiOS`: abas Ditar (gravar até tocar em parar, com o modo e o projeto do glossário), Histórico e Ajustes. O resultado vai para a área de transferência; na revisão, o texto copiado é o original.
+- App `InfiniTypesiOS`: abas Ditar (gravar até tocar em parar, com o modo e o projeto do glossário), Histórico e Ajustes. O resultado vai para a área de transferência. Na revisão, o original é o texto colado num campo da tela, que recebe cada resultado para uma nova revisão (desde 12/11/2026; antes era o texto copiado).
 - Gatilhos: a intenção "Ditar no InfiniTypes" (Atalhos, Siri e Botão de Ação) e o botão da Central de Controle e da tela bloqueada (extensão `InfiniTypesControls`).
 - Transcrição: WhisperKit, com o large-v3-turbo nos iPhones com 8 GB ou mais e o small quantizado (216 MB) nos demais. A comparação com o SpeechAnalyzer continua pendente.
 - Mesmo bundle ID do Mac (`com.infinidim.InfiniTypes`), que deixa a porta aberta para uma compra universal.

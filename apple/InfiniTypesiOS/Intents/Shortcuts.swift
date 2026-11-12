@@ -12,7 +12,7 @@ nonisolated struct InfiniTypesShortcuts: AppShortcutsProvider {
         AppShortcut(
             intent: StartDictationIntent(mode: .revision),
             phrases: ["Revisar com o \(.applicationName)"],
-            shortTitle: "Revisar o copiado",
+            shortTitle: "Revisar texto",
             systemImageName: "text.badge.checkmark"
         )
     }

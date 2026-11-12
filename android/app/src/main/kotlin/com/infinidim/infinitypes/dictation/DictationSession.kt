@@ -29,7 +29,8 @@ sealed interface DictationState {
         val remaining: String = RecordingLimit.remainingLabel(0),
     ) : DictationState
     data class Working(val message: String) : DictationState
-    data class Finished(val message: String) : DictationState
+    /** @param delivered se o texto foi entregue; não é quando a revisão não pediu alterações. */
+    data class Finished(val message: String, val delivered: Boolean = true) : DictationState
     data class Failed(val message: String) : DictationState
 }
 
@@ -61,7 +62,7 @@ class DictationSession(private val context: Context, private val scope: Coroutin
     fun start(mode: DictationMode, original: String?, appContext: DictationContext, deliver: (String) -> Unit) {
         if (isListening || isWorking) return
         if (mode == DictationMode.REVISION && original.isNullOrBlank()) {
-            _state.value = DictationState.Failed("Para revisar, selecione (no teclado) ou copie o texto antes de ditar.")
+            _state.value = DictationState.Failed("Para revisar, selecione o texto (no teclado) ou cole-o no campo de revisão (no app).")
             return
         }
         val match = services.glossary.glossary.value.match(services.settings.projectName)
@@ -188,7 +189,7 @@ class DictationSession(private val context: Context, private val scope: Coroutin
             save(record(dictation, result.text, original = original, refined = true, audioSeconds = audioSeconds,
                 refinementSeconds = seconds(start), tokens = result.inputTokens to result.outputTokens))
             if (result.editCount == 0) {
-                _state.value = DictationState.Finished("A fala não pediu alterações: o texto foi mantido")
+                _state.value = DictationState.Finished("A fala não pediu alterações: o texto foi mantido", delivered = false)
                 return
             }
             deliver(result.text)

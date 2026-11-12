@@ -8,7 +8,7 @@ App para Android 13 ou mais novo, em Kotlin com Jetpack Compose. Funciona de tr�
 | **Bloco nas Configurações Rápidas** | Puxe as Configurações Rápidas e toque em "Ditar prompt" | Copiado para a área de transferência |
 | **App** | Aba Ditar | Copiado para a área de transferência |
 
-No teclado, a revisão usa o texto **selecionado** no campo e o substitui pela versão revisada. No bloco e no app, o original é o texto **copiado**.
+No teclado, a revisão usa o texto **selecionado** no campo e o substitui pela versão revisada. No bloco e no app, o original é o texto colado no **campo de revisão** da tela: cada revisão substitui o conteúdo do campo pelo resultado, que também é copiado, para você revisar de novo sobre ele.
 
 ## Reconhecimento de voz
 

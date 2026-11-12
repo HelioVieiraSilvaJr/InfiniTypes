@@ -1,9 +1,10 @@
 import SwiftUI
 
-/// Tela principal: um botão grande para gravar e o resultado, já copiado.
+/// Tela principal: um botão grande para gravar e o resultado, já copiado. Na revisão, o campo com o texto a revisar.
 struct DictateView: View {
     @Bindable var model: DictationModel
     @Environment(\.scenePhase) private var scenePhase
+    @FocusState private var editorFocused: Bool
     private let pending = PendingDictation.shared
 
     var body: some View {
@@ -23,14 +24,20 @@ struct DictateView: View {
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: .infinity)
 
+                if model.mode == .revision {
+                    RevisionEditor(text: $model.revisionText, focused: $editorFocused)
+                        .disabled(model.isRecording || model.isWorking)
+                }
+
                 Spacer(minLength: 0)
-                RecordButton(model: model)
+                RecordButton(model: model, size: model.mode == .revision ? 140 : 200)
                 status
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: .infinity)
                 Spacer(minLength: 0)
 
-                if let text = model.lastText {
+                // Na revisão, o resultado já aparece no campo.
+                if model.mode != .revision, let text = model.lastText {
                     ResultCard(text: text)
                 }
             }
@@ -40,7 +47,14 @@ struct DictateView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     ProjectMenu(model: model)
                 }
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("OK") { editorFocused = false }
+                }
             }
+        }
+        .onChange(of: model.isRecording) { _, recording in
+            if recording { editorFocused = false }
         }
         .onChange(of: pending.mode, initial: true) { startPendingDictation() }
         .onChange(of: scenePhase) { _, phase in
@@ -52,7 +66,7 @@ struct DictateView: View {
         switch model.mode {
         case .prompt: "Fale do jeito que você pensa: sai um prompt organizado para a IA de codificação."
         case .literal: "Só limpa a fala: tira vícios e repetições, mantendo as suas palavras."
-        case .revision: "Copie o texto antes. Depois dite o que mudar: a versão revisada volta para a área de transferência."
+        case .revision: "Cole o texto no campo e dite o que mudar. O resultado substitui o texto do campo, para revisar de novo, e é copiado."
         }
     }
 
@@ -94,6 +108,7 @@ struct DictateView: View {
 
 private struct RecordButton: View {
     let model: DictationModel
+    var size: CGFloat = 200
 
     var body: some View {
         TimelineView(.animation(minimumInterval: 1 / 20, paused: !model.isRecording)) { _ in
@@ -107,16 +122,54 @@ private struct RecordButton: View {
                         .scaleEffect(1 + level * 0.35)
                     Circle()
                         .fill(model.isRecording ? Color.red : Color.accentColor)
-                        .padding(28)
+                        .padding(size * 0.14)
                     Image(systemName: model.isRecording ? "stop.fill" : "mic.fill")
-                        .font(.system(size: 52, weight: .semibold))
+                        .font(.system(size: size * 0.26, weight: .semibold))
                         .foregroundStyle(.white)
                 }
-                .frame(width: 200, height: 200)
+                .frame(width: size, height: size)
             }
             .buttonStyle(.plain)
             .disabled(model.isWorking)
             .accessibilityLabel(model.isRecording ? "Parar e processar" : "Começar a gravar")
+        }
+    }
+}
+
+/// Campo com o texto a revisar. Cada revisão substitui o conteúdo pelo resultado.
+private struct RevisionEditor: View {
+    @Binding var text: String
+    var focused: FocusState<Bool>.Binding
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("Texto a revisar").font(.headline)
+                Spacer()
+                PasteButton(payloadType: String.self) { strings in
+                    if let pasted = strings.first { text = pasted }
+                }
+                .labelStyle(.iconOnly)
+                .buttonBorderShape(.circle)
+                Button("Limpar", systemImage: "xmark.circle") { text = "" }
+                    .labelStyle(.iconOnly)
+                    .disabled(text.isEmpty)
+            }
+            TextEditor(text: $text)
+                .focused(focused)
+                .scrollContentBackground(.hidden)
+                .padding(8)
+                .frame(minHeight: 140, maxHeight: 260)
+                .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12))
+                .overlay(alignment: .topLeading) {
+                    if text.isEmpty {
+                        Text("Cole aqui o texto a revisar")
+                            .foregroundStyle(.tertiary)
+                            .padding(.horizontal, 13)
+                            .padding(.vertical, 16)
+                            .allowsHitTesting(false)
+                    }
+                }
         }
     }
 }

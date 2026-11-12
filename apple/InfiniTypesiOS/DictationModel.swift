@@ -6,7 +6,7 @@ import UIKit
 /// Ditado no iPhone: grava até você tocar em parar, transcreve, refina e copia o resultado.
 ///
 /// O iOS não deixa colar em outro app nem ler a seleção dele, então a entrega é pela área de
-/// transferência. Na revisão, o texto copiado é o original.
+/// transferência. Na revisão, o original é o texto do campo da tela, que recebe cada resultado.
 @Observable
 final class DictationModel {
     enum Phase: Equatable {
@@ -20,12 +20,18 @@ final class DictationModel {
     private static let minimumAudioSeconds = 0.5
     static let maxSelectionCharacters = 15_000
     private static let projectKey = "ios.projectName"
+    private static let revisionTextKey = "ios.revisionText"
 
     private(set) var phase: Phase = .idle
     var mode: DictationMode = .prompt
     /// Projeto do glossário escolhido na lista: no iPhone não há título de janela para reconhecê-lo.
     var projectName: String? {
         didSet { UserDefaults.standard.set(projectName, forKey: Self.projectKey) }
+    }
+    /// Texto a revisar, colado no campo da tela. Cada revisão o substitui pelo resultado, para revisar de novo.
+    /// Fica salvo, para não se perder se o iOS encerrar o app enquanto você usa outro.
+    var revisionText: String {
+        didSet { UserDefaults.standard.set(revisionText, forKey: Self.revisionTextKey) }
     }
     private(set) var lastText: String?
     /// Início da gravação em andamento, para a contagem regressiva até o tempo máximo.
@@ -47,6 +53,7 @@ final class DictationModel {
         self.transcriber = transcriber
         self.refiner = refiner
         projectName = UserDefaults.standard.string(forKey: Self.projectKey)
+        revisionText = UserDefaults.standard.string(forKey: Self.revisionTextKey) ?? ""
     }
 
     var level: Float { recorder.level }
@@ -60,12 +67,12 @@ final class DictationModel {
     func start(mode: DictationMode? = nil) async {
         guard !isRecording, !isWorking else { return }
         if let mode { self.mode = mode }
-        guard await AVAudioApplication.requestRecordPermission() else {
-            phase = .failed("Libere o microfone em Ajustes → InfiniTypes para ditar.")
+        if self.mode == .revision, revisionText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            phase = .failed("Cole no campo o texto a revisar e toque no microfone.")
             return
         }
-        if self.mode == .revision, UIPasteboard.general.hasStrings == false {
-            phase = .failed("Para revisar, copie antes o texto e depois dite o que mudar.")
+        guard await AVAudioApplication.requestRecordPermission() else {
+            phase = .failed("Libere o microfone em Ajustes → InfiniTypes para ditar.")
             return
         }
         do {
@@ -166,17 +173,19 @@ final class DictationModel {
                             inputTokens: tokens.0, outputTokens: tokens.1)
         }
 
-        guard let original = UIPasteboard.general.string, !original.isEmpty else {
-            save(record(text: dictation, original: nil, refined: false, error: "Nada copiado para revisar"))
-            phase = .failed("A área de transferência está vazia. A fala ficou no histórico.")
+        // O campo fica bloqueado enquanto grava e revisa, então este é o texto que estava nele ao tocar no microfone.
+        let original = revisionText
+        guard !original.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            save(record(text: dictation, original: nil, refined: false, error: "Campo de revisão vazio"))
+            phase = .failed("O campo de revisão está vazio. A fala ficou no histórico.")
             return
         }
-        // Salvaguardas antes de mandar o texto copiado para a API.
+        // Salvaguardas antes de mandar o texto do campo para a API.
         let secrets = SecretScanner.findings(in: original)
         guard secrets.isEmpty else {
             save(record(text: dictation, original: nil, refined: false,
                         error: "Texto não enviado: parece conter \(secrets.joined(separator: ", "))"))
-            phase = .failed("Nada foi enviado: o texto copiado parece conter \(secrets.joined(separator: ", ")).")
+            phase = .failed("Nada foi enviado: o texto do campo parece conter \(secrets.joined(separator: ", ")).")
             return
         }
         guard original.count <= Self.maxSelectionCharacters else {
@@ -197,13 +206,14 @@ final class DictationModel {
                 phase = .finished("A fala não pediu alterações: o texto foi mantido")
                 return
             }
+            revisionText = result.text
             deliver(result.text)
             let detail = result.editCount.map { $0 == 1 ? " (1 alteração)" : " (\($0) alterações)" } ?? ""
-            phase = .finished("Revisão copiada\(detail)")
+            phase = .finished("Revisão pronta\(detail): o campo foi atualizado e o texto, copiado")
         } catch {
             save(record(text: dictation, original: original, refined: false, error: error.localizedDescription,
                         seconds: (ContinuousClock.now - start).seconds))
-            phase = .failed("A revisão falhou e o texto copiado continua intacto. \(error.localizedDescription)")
+            phase = .failed("A revisão falhou e o texto do campo continua intacto. \(error.localizedDescription)")
         }
     }
 

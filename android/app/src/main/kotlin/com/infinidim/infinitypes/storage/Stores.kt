@@ -41,6 +41,14 @@ class SettingsStore(context: Context) {
     var allowNetworkRecognition: Boolean
         get() = prefs.getBoolean("allowNetworkRecognition", false)
         set(value) = prefs.edit { putBoolean("allowNetworkRecognition", value) }
+
+    /**
+     * Texto do campo de revisão do app. Cada revisão o substitui pelo resultado, para revisar de novo, e ele fica
+     * salvo para não se perder se o Android encerrar o app enquanto você usa outro.
+     */
+    var revisionText: String
+        get() = prefs.getString("revisionText", null).orEmpty()
+        set(value) = prefs.edit { putString("revisionText", value) }
 }
 
 /** Chave da API cifrada com AES-GCM por uma chave do Android Keystore, que nunca sai do hardware. */
