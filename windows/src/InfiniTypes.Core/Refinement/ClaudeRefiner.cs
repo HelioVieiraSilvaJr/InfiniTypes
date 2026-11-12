@@ -50,7 +50,8 @@ public sealed class ClaudeRefiner
     {
         var (client, model, effort) = Prepare();
         var request = MakeRequest(model, effort, _systemPrompts[mode], transcript, context, vocabulary);
-        var (text, usage) = Text(await client.CreateMessageAsync(request, cancellationToken: cancellationToken));
+        // Um ditado de 10 minutos rende um prompt longo, e a análise das etapas leva mais tempo.
+        var (text, usage) = Text(await client.CreateMessageAsync(request, TimeSpan.FromSeconds(120), cancellationToken));
         return new RefinementResult(text, model.Id, usage?.InputTokens, usage?.OutputTokens);
     }
 

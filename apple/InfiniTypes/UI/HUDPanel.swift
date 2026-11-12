@@ -4,7 +4,8 @@ import SwiftUI
 
 enum HUDState: Equatable {
     case hidden
-    case recording(String)
+    /// `since`: início da gravação, para a contagem regressiva até o tempo máximo.
+    case recording(String, since: Date)
     case working(String)
     case success(String)
     case notice(String)
@@ -100,7 +101,8 @@ private struct HUDView: View {
             Text(message)
                 .font(.system(size: 13, weight: .medium))
                 .lineLimit(2)
-            if case .recording = model.state {
+            if case .recording(_, let start) = model.state {
+                Countdown(start: start)
                 LevelMeter(level: model.level)
             }
         }
@@ -130,8 +132,21 @@ private struct HUDView: View {
 
     private var message: String {
         switch model.state {
-        case .recording(let text), .working(let text), .success(let text), .notice(let text), .failure(let text): text
+        case .recording(let text, _), .working(let text), .success(let text), .notice(let text), .failure(let text): text
         case .hidden: ""
+        }
+    }
+}
+
+/// Tempo que falta para a gravação terminar sozinha.
+private struct Countdown: View {
+    let start: Date
+
+    var body: some View {
+        TimelineView(.periodic(from: start, by: 1)) { context in
+            Text(RecordingLimit.remainingLabel(since: start, now: context.date))
+                .font(.system(size: 13, weight: .semibold).monospacedDigit())
+                .foregroundStyle(.secondary)
         }
     }
 }

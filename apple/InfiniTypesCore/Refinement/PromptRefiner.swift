@@ -82,7 +82,8 @@ final class ClaudeRefiner: PromptRefiner {
         let model = ModelCatalog.model(id: settings.modelID)
         let request = Self.makeRequest(model: model, effort: settings.effort, systemPrompt: systemPrompts[mode] ?? "",
                                        transcript: transcript, context: context, vocabulary: vocabulary)
-        let text = try Self.text(of: try await client.createMessage(request))
+        // Um ditado de 10 minutos rende um prompt longo, e a análise das etapas leva mais tempo.
+        let text = try Self.text(of: try await client.createMessage(request, timeout: 120))
         return RefinementResult(text: text.value, modelID: model.id,
                                 inputTokens: text.usage.inputTokens, outputTokens: text.usage.outputTokens)
     }

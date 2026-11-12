@@ -22,6 +22,7 @@ public partial class HudWindow : Window
     private readonly DispatcherTimer _hide = new();
     private Func<float>? _level;
     private Func<string?>? _detail;
+    private Func<string>? _countdown;
     private string _message = "";
 
     public HudWindow()
@@ -38,7 +39,9 @@ public partial class HudWindow : Window
         _hide.Tick += (_, _) => HideNow();
     }
 
-    public void ShowRecording(string message, Func<float> level) => Present(message, Red, level: level);
+    /// <param name="countdown">Tempo que falta para a gravação terminar sozinha, como "9:59".</param>
+    public void ShowRecording(string message, Func<float> level, Func<string> countdown) =>
+        Present(message, Red, level: level, countdown: countdown);
 
     /// <param name="detail">Texto que substitui a mensagem enquanto não for nulo, como o progresso de um download.</param>
     public void ShowWorking(string message, Func<string?>? detail = null) => Present(message, Blue, detail: detail);
@@ -55,15 +58,19 @@ public partial class HudWindow : Window
         _hide.Stop();
         _level = null;
         _detail = null;
+        _countdown = null;
         Hide();
     }
 
     private void Present(string message, Brush color, Func<float>? level = null, Func<string?>? detail = null,
-        TimeSpan? hideAfter = null)
+        Func<string>? countdown = null, TimeSpan? hideAfter = null)
     {
         _message = message;
         _level = level;
         _detail = detail;
+        _countdown = countdown;
+        Countdown.Text = countdown?.Invoke() ?? "";
+        Countdown.Visibility = countdown is null ? Visibility.Collapsed : Visibility.Visible;
         Message.Text = message;
         Indicator.Fill = color;
         LevelBar.Background = color;
@@ -74,7 +81,7 @@ public partial class HudWindow : Window
             _hide.Interval = delay;
             _hide.Start();
         }
-        if (level is not null || detail is not null) _refresh.Start();
+        if (level is not null || detail is not null || countdown is not null) _refresh.Start();
         else _refresh.Stop();
         if (!IsVisible) Show();
         Reposition();
@@ -84,6 +91,7 @@ public partial class HudWindow : Window
     {
         if (_level is { } level) LevelBar.Width = LevelTrack.Width * Math.Clamp(level(), 0, 1);
         if (_detail is not null) Message.Text = _detail() ?? _message;
+        if (_countdown is { } countdown) Countdown.Text = countdown();
     }
 
     /// <summary>Centralizado, logo acima da barra de tarefas do monitor principal.</summary>

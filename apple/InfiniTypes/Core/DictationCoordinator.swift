@@ -12,7 +12,6 @@ final class DictationCoordinator {
     }
 
     private static let minimumAudioSeconds = 0.5
-    private static let maximumAudioSeconds = 5.0 * 60
     /// Toques rápidos (ex.: ⌘C com o ⌘ direito) terminam antes disso e não abrem o microfone.
     private static let armingDelay: [DictationMode: Duration] = [.literal: .milliseconds(150)]
     /// O HUD só aparece depois disso, para atalhos cancelados não piscarem na tela.
@@ -163,6 +162,7 @@ final class DictationCoordinator {
         }
         phase = .recording
         recordingStartedAt = .now
+        let startedAt = Date.now
 
         let modeLabel = switch (mode, selection) {
         case (.revision, .text(let text)): "Ouvindo (revisão de \(text.wordCount) palavras)…"
@@ -178,10 +178,10 @@ final class DictationCoordinator {
         pendingTask = Task { [weak self] in
             try? await Task.sleep(for: hudDelay)
             guard !Task.isCancelled, let self, phase == .recording else { return }
-            hud.show(.recording(label)) { [recorder] in recorder.level }
+            hud.show(.recording(label, since: startedAt)) { [recorder] in recorder.level }
         }
         maxDurationTask = Task { [weak self] in
-            try? await Task.sleep(for: .seconds(Self.maximumAudioSeconds))
+            try? await Task.sleep(for: .seconds(RecordingLimit.seconds))
             guard !Task.isCancelled else { return }
             self?.finishRecording()
         }
@@ -379,6 +379,8 @@ final class DictationCoordinator {
     #if DEBUG
     /// Com `-transcribeFile <caminho>` (e `-literal YES` para o modo literal), transcreve e refina
     /// um arquivo de áudio usando o contexto e o glossário da janela em foco, sem colar nem salvar.
+    /// Um arquivo `.txt` faz o papel da transcrição, para testar o refinamento com falas já transcritas.
+    /// O log corta mensagens longas: o texto final inteiro vai para `<caminho>.resultado.md`.
     /// Com `-reviseFile <caminho>`, o texto desse arquivo faz o papel da seleção; com `-glossaryFile <caminho>`,
     /// um glossário em JSON substitui o do usuário.
     func debugProcessFile(at path: String, mode: DictationMode, selectionFile: String?, glossary override: Glossary?) async {
@@ -387,7 +389,9 @@ final class DictationCoordinator {
             let match = (override ?? glossary.glossary).match(windowTitle: context.windowTitle)
             context.projectName = match.projectName
             let start = ContinuousClock.now
-            let transcript = HallucinationFilter.clean(try await transcriber.transcribe(fileAt: path, vocabulary: match.terms))
+            let transcript = path.hasSuffix(".txt")
+                ? try String(contentsOfFile: path, encoding: .utf8)
+                : HallucinationFilter.clean(try await transcriber.transcribe(fileAt: path, vocabulary: match.terms))
             Logger.dictation.notice("[debug] transcrição (\((ContinuousClock.now - start).seconds, format: .fixed(precision: 2), privacy: .public) s, glossário \(match.terms.count, privacy: .public) termos): \(transcript, privacy: .public)")
             let refinementStart = ContinuousClock.now
             if let selectionFile {
@@ -397,6 +401,7 @@ final class DictationCoordinator {
                 Logger.dictation.notice("[debug] revisão (\((ContinuousClock.now - refinementStart).seconds, format: .fixed(precision: 2), privacy: .public) s, \(result.editCount.map { "\($0) alterações" } ?? "reescrita", privacy: .public), tokens \(result.inputTokens, privacy: .public)/\(result.outputTokens, privacy: .public)):\n\(result.text, privacy: .public)")
             } else {
                 let result = try await refiner.refine(transcript: transcript, context: context, mode: mode, vocabulary: match.terms)
+                try result.text.write(toFile: path + ".resultado.md", atomically: true, encoding: .utf8)
                 Logger.dictation.notice("[debug] \(mode.rawValue, privacy: .public) (\((ContinuousClock.now - refinementStart).seconds, format: .fixed(precision: 2), privacy: .public) s, \(result.modelID, privacy: .public)): \(result.text, privacy: .public)")
             }
         } catch {

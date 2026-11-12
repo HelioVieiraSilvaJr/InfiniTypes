@@ -62,7 +62,15 @@ struct DictateView: View {
             Text(model.settings.hasAPIKey ? "Toque para gravar" : "Toque para gravar. Sem a chave da API, o texto sai sem refinar.")
                 .foregroundStyle(.secondary)
         case .recording:
-            Text("Ouvindo… toque para parar").foregroundStyle(.red)
+            if let start = model.recordingStartedAt {
+                TimelineView(.periodic(from: start, by: 1)) { context in
+                    Text("Ouvindo… \(RecordingLimit.remainingLabel(since: start, now: context.date)) · toque para parar")
+                        .monospacedDigit()
+                        .foregroundStyle(.red)
+                }
+            } else {
+                Text("Ouvindo… toque para parar").foregroundStyle(.red)
+            }
         case .working(let message):
             Label(message, systemImage: "ellipsis").foregroundStyle(.secondary)
         case .finished(let message):

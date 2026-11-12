@@ -46,7 +46,8 @@ class ClaudeRefiner(
     fun refine(transcript: String, context: DictationContext, mode: DictationMode, vocabulary: List<String>): RefinementResult {
         val (client, model, effort) = prepare()
         val request = makeRequest(model, effort, systemPrompts.getValue(mode), transcript, context, vocabulary)
-        val response = text(client.createMessage(request))
+        // Um ditado de 10 minutos rende um prompt longo, e a análise das etapas leva mais tempo.
+        val response = text(client.createMessage(request, timeoutMillis = 120_000))
         return RefinementResult(response.text, model.id, response.inputTokens, response.outputTokens)
     }
 

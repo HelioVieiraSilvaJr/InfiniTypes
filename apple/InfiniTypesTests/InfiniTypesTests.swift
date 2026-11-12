@@ -176,6 +176,17 @@ struct FocusDetectorTests {
     }
 }
 
+struct RecordingLimitTests {
+    @Test func countsDownFromTenMinutes() {
+        let start = Date(timeIntervalSinceReferenceDate: 0)
+        #expect(RecordingLimit.remainingLabel(since: start, now: start) == "10:00")
+        #expect(RecordingLimit.remainingLabel(since: start, now: start + 0.3) == "10:00")
+        #expect(RecordingLimit.remainingLabel(since: start, now: start + 1) == "9:59")
+        #expect(RecordingLimit.remainingLabel(since: start, now: start + 595.5) == "0:05")
+        #expect(RecordingLimit.remainingLabel(since: start, now: start + 700) == "0:00")
+    }
+}
+
 struct DayGroupingTests {
     private let calendar: Calendar = {
         var calendar = Calendar(identifier: .gregorian)

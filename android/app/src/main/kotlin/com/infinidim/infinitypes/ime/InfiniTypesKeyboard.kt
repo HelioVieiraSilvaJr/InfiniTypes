@@ -179,7 +179,7 @@ class InfiniTypesKeyboard : InputMethodService() {
         micButton.imageTintList = ColorStateList.valueOf(Color.WHITE)
         when (state) {
             DictationState.Idle -> selectMode(mode)
-            is DictationState.Listening -> status.text = state.partial.ifEmpty { "Ouvindo… toque para terminar" }
+            is DictationState.Listening -> status.text = "Ouvindo… ${state.remaining}" + state.partial.let { if (it.isEmpty()) " · toque para terminar" else "\n$it" }
             is DictationState.Working -> status.text = state.message
             is DictationState.Finished -> status.text = state.message
             is DictationState.Failed -> status.text = state.message

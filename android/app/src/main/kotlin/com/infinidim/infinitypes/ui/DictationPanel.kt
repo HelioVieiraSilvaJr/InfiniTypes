@@ -123,7 +123,7 @@ fun DictationPanel(session: DictationSession, autoStart: Boolean = false, onDeli
 
         val message = when (val current = state) {
             DictationState.Idle -> if (permissionDenied) "Sem o microfone não dá para ditar. Libere nas configurações do Android." else "Toque para ditar"
-            is DictationState.Listening -> current.partial.ifEmpty { "Ouvindo… toque para terminar" }
+            is DictationState.Listening -> "Ouvindo… ${current.remaining}" + current.partial.let { if (it.isEmpty()) " · toque para terminar" else "\n$it" }
             is DictationState.Working -> current.message
             is DictationState.Finished -> "${current.message}: copiado para a área de transferência"
             is DictationState.Failed -> current.message

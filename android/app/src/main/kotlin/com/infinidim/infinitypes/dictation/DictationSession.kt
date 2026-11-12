@@ -8,10 +8,13 @@ import com.infinidim.infinitypes.core.DictationMode
 import com.infinidim.infinitypes.core.DictationRecord
 import com.infinidim.infinitypes.core.HallucinationFilter
 import com.infinidim.infinitypes.core.ModelCatalog
+import com.infinidim.infinitypes.core.RecordingLimit
 import com.infinidim.infinitypes.core.RefinementResult
 import com.infinidim.infinitypes.core.SecretScanner
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -19,7 +22,12 @@ import kotlinx.coroutines.withContext
 
 sealed interface DictationState {
     data object Idle : DictationState
-    data class Listening(val partial: String, val level: Float) : DictationState
+    /** @param remaining tempo que falta para a gravação terminar sozinha, como "9:59". */
+    data class Listening(
+        val partial: String,
+        val level: Float,
+        val remaining: String = RecordingLimit.remainingLabel(0),
+    ) : DictationState
     data class Working(val message: String) : DictationState
     data class Finished(val message: String) : DictationState
     data class Failed(val message: String) : DictationState
@@ -40,6 +48,7 @@ class DictationSession(private val context: Context, private val scope: Coroutin
     private var dictationContext = DictationContext.EMPTY
     private var vocabulary: List<String> = emptyList()
     private var startedAt = 0L
+    private var countdown: Job? = null
     private var deliver: (String) -> Unit = {}
 
     val isListening: Boolean get() = _state.value is DictationState.Listening
@@ -70,6 +79,24 @@ class DictationSession(private val context: Context, private val scope: Coroutin
         startedAt = System.currentTimeMillis()
         _state.value = DictationState.Listening("", 0f)
         transcriber.start(vocabulary)
+        startCountdown()
+    }
+
+    /** Atualiza o tempo restante e, ao chegar no limite, termina a gravação como se você tocasse em parar. */
+    private fun startCountdown() {
+        countdown?.cancel()
+        countdown = scope.launch {
+            while (true) {
+                val listening = _state.value as? DictationState.Listening ?: break
+                val elapsed = System.currentTimeMillis() - startedAt
+                _state.value = listening.copy(remaining = RecordingLimit.remainingLabel(elapsed))
+                if (elapsed >= RecordingLimit.DURATION_MILLIS) {
+                    stop()
+                    break
+                }
+                delay(250)
+            }
+        }
     }
 
     fun stop() {
@@ -77,11 +104,13 @@ class DictationSession(private val context: Context, private val scope: Coroutin
     }
 
     fun cancel() {
+        countdown?.cancel()
         transcriber?.cancel()
         _state.value = DictationState.Idle
     }
 
     fun destroy() {
+        countdown?.cancel()
         transcriber?.destroy()
         transcriber = null
     }

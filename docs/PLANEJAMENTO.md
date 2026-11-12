@@ -85,7 +85,7 @@ idle ──(⌥ pressionado)──▶ recording ──(⌥ solto)──▶ trans
 - `AVAudioEngine` com tap no `inputNode` e `AVAudioConverter` para 16 kHz mono Float32 (formato do Whisper).
 - Engine preparado com antecedência (`prepare()`) para não cortar as primeiras palavras.
 - Nível RMS em tempo real para o HUD.
-- Limite de duração (ex.: 5 min) e duração mínima (ex.: 0,5 s; abaixo disso, descarta).
+- Limite de duração de 10 min, com contagem regressiva no HUD, e duração mínima de 0,5 s (abaixo disso, descarta).
 - O microfone só abre enquanto você grava. Nada de escuta contínua.
 
 ### 3.3 Transcriber (WhisperKit)
@@ -109,7 +109,7 @@ idle ──(⌥ pressionado)──▶ recording ──(⌥ solto)──▶ trans
 - Os modelos têm diferenças de API, então a requisição é montada por modelo (`ModelCatalog`). O parâmetro `thinking` é omitido (pensamento adaptativo, aceito por todos os atuais) e a profundidade fica em `output_config.effort`: padrão `low` para priorizar latência, ajustável nas preferências.
 - *Fallback* de recusa (`anthropic-beta: server-side-fallback-2026-07-01` + `fallbacks: "default"`) enviado só para os modelos que aceitam (Opus 5.5, Sonnet 5.5, Fable 5.1). O Haiku 5.5 não tem esse recurso. Em todos os casos, checa o `stop_reason` antes de ler a resposta.
 - System prompt fixo (seção 4) com `cache_control`. Glossário, contexto e transcrição vão na mensagem do usuário.
-- Timeout de 45 s e uma nova tentativa em erros temporários (429 e 5xx). **Em qualquer falha, salva e cola a transcrição bruta** e avisa no HUD ("Não entre em pânico…"): o ditado nunca se perde.
+- Timeout de 120 s no refinamento (um ditado de 10 min rende um prompt longo) e uma nova tentativa em erros temporários (429 e 5xx). **Em qualquer falha, salva e cola a transcrição bruta** e avisa no HUD ("Não entre em pânico…"): o ditado nunca se perde.
 - Chave da API guardada no Keychain. É uma chave do Console da Anthropic, cobrada à parte da assinatura do Claude.
 - Registra no histórico o `usage` (tokens) de cada chamada, para acompanhar o custo.
 
@@ -129,7 +129,7 @@ idle ──(⌥ pressionado)──▶ recording ──(⌥ solto)──▶ trans
 - **Nunca envia Enter** nem quebra de linha final.
 
 ### 3.7 HUD, menu e preferências
-- **HUD**: `NSPanel` não ativável, sem foco e sem cliques, centralizado embaixo da tela. Estados: ouvindo (com nível de áudio), transcrevendo, refinando, erro.
+- **HUD**: `NSPanel` não ativável, sem foco e sem cliques, centralizado embaixo da tela. Estados: ouvindo (com nível de áudio e o tempo que resta até o limite de 10 min), transcrevendo, refinando, erro.
 - **Menu**: estado atual, troca rápida de modelo, último prompt (copiar ou colar de novo), histórico, preferências, sair.
 - **Preferências**: chave da API, **modelo da Anthropic** (com preço por milhão de tokens ao lado de cada um), effort, atalhos, glossário, iniciar com o macOS (`SMAppService`), sons de início e fim.
 
@@ -165,17 +165,21 @@ Você seleciona um texto já escrito (um prompt colado, por exemplo), dá um toq
 
 ## 4. O coração: o system prompt de refinamento
 
-É aqui que o app se diferencia de um ditado comum. Regras do prompt v1:
+É aqui que o app se diferencia de um ditado comum. O prompt v2 (12/11/2026) separa o trabalho em quatro etapas, todas no raciocínio do modelo, sob uma regra que vale para todas:
 
-1. **Fidelidade acima de tudo.** Nunca adicionar requisitos, arquivos, bibliotecas ou decisões que você não falou.
-2. **Limpeza.** Remover vícios ("é", "tipo", "né", "então"), repetições e hesitações.
-3. **Autocorreção.** "No arquivo X, não, no Y" vira só "no Y". Vale sempre a última versão.
-4. **Termos técnicos corretos.** Corrigir a grafia fonética ("iúz efeque" → `useEffect`, "dóker compôs" → Docker Compose) usando o glossário e conhecimento técnico, só quando não houver ambiguidade.
-5. **Preservação literal.** Caminhos, nomes de arquivos, comandos, identificadores, mensagens de erro e números vão em `código`, exatamente como ditos.
-6. **Estrutura proporcional.** Pedido curto vira 1 a 3 frases diretas, sem seções. Pedido longo ganha seções (Objetivo, Contexto, Requisitos, Restrições, Critério de pronto), **só as que tiverem conteúdo**.
-7. **Tom de instrução.** Imperativo e objetivo, dirigido ao agente: "Implemente…", "Investigue…", "Não altere…".
-8. **Ambiguidade não se chuta.** Se você deixou algo em aberto, o prompt mantém em aberto.
-9. **Saída pura.** Só o prompt, em português, Markdown leve (listas e `código`), sem preâmbulo nem comentários.
+- **Não inventar.** Tudo vem da fala, do contexto ou do glossário, ou é uma consequência que qualquer programador experiente tiraria deles sem hesitar. Nunca adicionar requisitos, arquivos, bibliotecas, valores ou decisões que você não falou.
+
+1. **Construir o prompt.**
+   - **Autocorreção:** "No arquivo X, não, no Y" vira só "no Y". Vale sempre a última versão.
+   - **Termos técnicos corretos:** corrigir a grafia fonética ("iúz efeque" → `useEffect`, "dóker compôs" → Docker Compose) com o glossário e o conhecimento técnico, só quando não houver ambiguidade.
+   - **Preservação literal:** caminhos, nomes de arquivos, comandos, identificadores, mensagens de erro e números vão em `código`, exatamente como ditos.
+   - **Tom de instrução:** imperativo e objetivo, dirigido ao agente ("Implemente…", "Investigue…", "Não altere…").
+   - **Estrutura proporcional:** pedido curto vira 1 a 3 frases diretas. Pedido longo ganha o objetivo e listas, **só com as partes que tiverem conteúdo**.
+2. **Enxugar, como o [Caveman](https://github.com/JuliusBrussee/caveman).** Cortar vícios ("é", "tipo", "né", "então"), cortesias, repetições e narrativa que não orienta a execução. Uma ideia por frase, em voz ativa e com um único termo para cada coisa. Negações e limitadores ("não", "só"), números, código e avisos de ações irreversíveis nunca saem. As frases continuam gramaticais: o próprio Caveman evita comprimir prompts em estilo telegráfico, porque isso piora as respostas.
+3. **Preencher lacunas claras.** Só o que tem uma única leitura: "esse arquivo" vira o nome real quando ele foi dito ou está no título da janela, e renomear uma função inclui atualizar as chamadas. Escolhas abertas (biblioteca, formato, valor) e boas práticas que ninguém pediu ficam de fora.
+4. **Pré-executar.** O modelo lê o prompt como o agente que vai executá-lo e procura o que o faria errar, perguntar ou procurar à toa. Resolve só por dedução segura. Se uma dúvida decisiva não puder ser deduzida, o prompt termina pedindo que o agente a confirme antes de agir, no máximo uma vez.
+
+A saída é só o prompt, em português e Markdown leve (listas e `código`), sem preâmbulo nem comentários.
 
 **Exemplo**
 
@@ -392,7 +396,7 @@ A ideia continua a mesma (fala livre → prompt sólido), mas a entrega muda. O 
 | Whisper inventa frases em silêncio | VAD, duração mínima e lista de alucinações conhecidas |
 | Primeiras palavras cortadas | Engine preparado antes; HUD só mostra "Ouvindo" com o microfone ativo |
 | Opus lento em ditados longos | Effort `low`, medição desde o MVP, refinador trocável |
-| Modelo "inventa" requisitos | Regra de fidelidade e casos-armadilha no golden set |
+| Modelo "inventa" requisitos | Regra "não invente", lacunas preenchidas só por dedução segura e casos-armadilha no golden set |
 | ⌥ direito conflita com acentos e atalhos | Cancela se outra tecla for pressionada; atalho configurável |
 | App lento cola o clipboard já restaurado | Restauração com atraso configurável |
 | Colar em terminal executar algo | O app nunca envia Enter nem quebra de linha final |

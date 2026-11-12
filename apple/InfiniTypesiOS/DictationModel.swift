@@ -18,7 +18,6 @@ final class DictationModel {
     }
 
     private static let minimumAudioSeconds = 0.5
-    private static let maximumAudioSeconds = 5.0 * 60
     static let maxSelectionCharacters = 15_000
     private static let projectKey = "ios.projectName"
 
@@ -29,6 +28,8 @@ final class DictationModel {
         didSet { UserDefaults.standard.set(projectName, forKey: Self.projectKey) }
     }
     private(set) var lastText: String?
+    /// Início da gravação em andamento, para a contagem regressiva até o tempo máximo.
+    private(set) var recordingStartedAt: Date?
 
     let settings: AppSettings
     let glossary: GlossaryStore
@@ -74,9 +75,10 @@ final class DictationModel {
             return
         }
         phase = .recording
+        recordingStartedAt = .now
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
         maxDurationTask = Task { [weak self] in
-            try? await Task.sleep(for: .seconds(Self.maximumAudioSeconds))
+            try? await Task.sleep(for: .seconds(RecordingLimit.seconds))
             guard !Task.isCancelled else { return }
             self?.finish()
         }

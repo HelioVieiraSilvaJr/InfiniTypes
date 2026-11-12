@@ -274,6 +274,19 @@ public sealed class AudioConverterTests
     }
 }
 
+public sealed class RecordingLimitTests
+{
+    [Fact]
+    public void CountsDownFromTenMinutes()
+    {
+        Assert.Equal("10:00", Transcription.RecordingLimit.RemainingLabel(TimeSpan.Zero));
+        Assert.Equal("10:00", Transcription.RecordingLimit.RemainingLabel(TimeSpan.FromSeconds(0.3)));
+        Assert.Equal("9:59", Transcription.RecordingLimit.RemainingLabel(TimeSpan.FromSeconds(1)));
+        Assert.Equal("0:05", Transcription.RecordingLimit.RemainingLabel(TimeSpan.FromSeconds(595.5)));
+        Assert.Equal("0:00", Transcription.RecordingLimit.RemainingLabel(TimeSpan.FromSeconds(700)));
+    }
+}
+
 public sealed class DayGroupingTests
 {
     [Fact]

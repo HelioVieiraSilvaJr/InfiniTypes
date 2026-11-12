@@ -26,7 +26,6 @@ internal sealed class DictationCoordinator(
     }
 
     private const double MinimumAudioSeconds = 0.5;
-    private static readonly TimeSpan MaximumAudio = TimeSpan.FromMinutes(5);
     /// <summary>Toques rápidos (ex.: Shift direito + letra) terminam antes disso e não abrem o microfone.</summary>
     private static readonly TimeSpan LiteralArmingDelay = TimeSpan.FromMilliseconds(150);
     /// <summary>O HUD só aparece depois disso, para atalhos cancelados não piscarem na tela.</summary>
@@ -162,14 +161,16 @@ internal sealed class DictationCoordinator(
             return;
         }
         _phase = Phase.Recording;
-        _recordingClock = Stopwatch.StartNew();
+        var clock = Stopwatch.StartNew();
+        _recordingClock = clock;
         var pending = NewPending();
         try
         {
             // Na revisão e no mãos-livres o gesto é intencional: o aviso aparece na hora, confirmando o modo.
             if (_mode != DictationMode.Revision && !_handsFree) await Task.Delay(HudDelay, pending.Token);
-            if (_phase == Phase.Recording) hud.ShowRecording(RecordingLabel(), () => _recorder.Level);
-            await Task.Delay(MaximumAudio - HudDelay, pending.Token);
+            if (_phase == Phase.Recording)
+                hud.ShowRecording(RecordingLabel(), () => _recorder.Level, () => RecordingLimit.RemainingLabel(clock.Elapsed));
+            await Task.Delay(RecordingLimit.Duration - clock.Elapsed, pending.Token);
             if (_phase == Phase.Recording) FinishRecording();
         }
         catch (TaskCanceledException)
