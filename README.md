@@ -19,11 +19,23 @@ As regras comuns (detector de segredos, filtro de alucinações, escolha do proj
 
 ## Instalar
 
-Baixe o pacote da sua plataforma na [página de versões](https://github.com/HelioVieiraSilvaJr/InfiniTypes/releases): abra a versão do topo, a mais recente, e procure os arquivos em **Assets**, no fim dela. Você também vai precisar de uma chave da API da Anthropic (veja [Use a sua própria chave da API](#use-a-sua-própria-chave-da-api)).
+No Mac e no Windows, dá para instalar e atualizar pelo terminal. Em todas as plataformas, também dá para baixar o pacote na [página de versões](https://github.com/HelioVieiraSilvaJr/InfiniTypes/releases): abra a versão do topo, a mais recente, e procure os arquivos em **Assets**, no fim dela. Você também vai precisar de uma chave da API da Anthropic (veja [Use a sua própria chave da API](#use-a-sua-própria-chave-da-api)).
 
 Os pacotes ainda não passam pela verificação da Apple, da Microsoft nem do Google, por isso o sistema avisa na primeira abertura. Os passos abaixo mostram como liberar.
 
 ### Mac (macOS 26, com chip Apple)
+
+**Pelo terminal, com o [Homebrew](https://brew.sh):**
+
+```bash
+brew tap heliovieirasilvajr/tap
+brew trust heliovieirasilvajr/tap      # o Homebrew pede para confiar em taps que não são oficiais
+brew install --cask infinitypes
+```
+
+Depois, siga do passo 3 em diante. Para atualizar, rode `brew upgrade --cask infinitypes`.
+
+**Pelo navegador:**
 
 1. Baixe o `InfiniTypes-macos-<versão>.dmg`.
 2. Abra o `.dmg` e arraste o InfiniTypes para a pasta **Aplicativos**. Se já tiver uma versão anterior, substitua.
@@ -36,6 +48,17 @@ Os pacotes ainda não passam pela verificação da Apple, da Microsoft nem do Go
 O app fica no ícone da barra de menus, no topo da tela.
 
 ### Windows (10 ou 11)
+
+**Pelo terminal, com o [Scoop](https://scoop.sh):**
+
+```powershell
+scoop bucket add infinitypes https://github.com/HelioVieiraSilvaJr/scoop-bucket
+scoop install infinitypes
+```
+
+Depois, abra o InfiniTypes pelo menu Iniciar e siga do passo 4 em diante. Para atualizar, feche o app e rode `scoop update` e depois `scoop update infinitypes`.
+
+**Pelo navegador:**
 
 1. Baixe o `.zip` do seu PC:
    - `InfiniTypes-windows-x64.zip` para a maioria dos PCs, com processador Intel ou AMD.

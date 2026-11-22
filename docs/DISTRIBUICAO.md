@@ -59,6 +59,12 @@ Se a Apple recusar o envio, o motivo aparece com o comando abaixo, usando o `id`
 xcrun notarytool log <id> --keychain-profile InfiniTypes
 ```
 
+## Instalação pelo terminal (Homebrew e Scoop)
+
+A receita do Homebrew fica em [HelioVieiraSilvaJr/homebrew-tap](https://github.com/HelioVieiraSilvaJr/homebrew-tap), e o manifesto do Scoop, para o Windows, em [HelioVieiraSilvaJr/scoop-bucket](https://github.com/HelioVieiraSilvaJr/scoop-bucket). Nos dois, um workflow confere a cada 6 horas a versão mais recente do InfiniTypes, inclusive as de pré-lançamento, e atualiza a versão e os hashes. Para atualizar na hora, rode o workflow **Atualizar o InfiniTypes** na aba **Actions** de cada repositório.
+
+Para a atualização encontrar os arquivos, cada Release precisa da tag `v<versão>` e destes nomes: `InfiniTypes-macos-<versão>.dmg`, `InfiniTypes-windows-x64.zip` e `InfiniTypes-windows-arm64.zip`.
+
 ## Observações
 
 - **Permissões:** Microfone e Acessibilidade ficam ligadas à assinatura. No mesmo Mac, o build com Developer ID conta como um app diferente do build de desenvolvimento e pede as permissões de novo.
