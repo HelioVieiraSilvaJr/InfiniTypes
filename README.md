@@ -17,6 +17,57 @@ Você segura um atalho, explica o que quer em voz alta (com hesitações, voltas
 
 As regras comuns (detector de segredos, filtro de alucinações, escolha do projeto, revisão e montagem da requisição) passam nos mesmos casos de [`shared/conformance`](shared/conformance) em todas as plataformas. O plano e o estado de cada uma estão em [`docs/PLANEJAMENTO.md`](docs/PLANEJAMENTO.md).
 
+## Instalar
+
+Baixe o pacote da sua plataforma na [página de versões](https://github.com/HelioVieiraSilvaJr/InfiniTypes/releases): abra a versão do topo, a mais recente, e procure os arquivos em **Assets**, no fim dela. Você também vai precisar de uma chave da API da Anthropic (veja [Use a sua própria chave da API](#use-a-sua-própria-chave-da-api)).
+
+Os pacotes ainda não passam pela verificação da Apple, da Microsoft nem do Google, por isso o sistema avisa na primeira abertura. Os passos abaixo mostram como liberar.
+
+### Mac (macOS 26, com chip Apple)
+
+1. Baixe o `InfiniTypes-macos-<versão>.dmg`.
+2. Abra o `.dmg` e arraste o InfiniTypes para a pasta **Aplicativos**. Se já tiver uma versão anterior, substitua.
+3. Abra o app. O macOS bloqueia, porque o app ainda não é verificado pela Apple.
+4. Vá em **Ajustes → Privacidade e Segurança**, role até o aviso do InfiniTypes e clique em **Abrir Mesmo Assim**.
+5. Quando o app pedir, permita o **Microfone** e a **Acessibilidade**.
+6. Cole a sua chave da API nas **Preferências**, que abrem sozinhas na primeira vez.
+7. Para testar, segure o **⌥ direito**, fale e solte. Na primeira vez, o app baixa o modelo de voz (cerca de 630 MB).
+
+O app fica no ícone da barra de menus, no topo da tela.
+
+### Windows (10 ou 11)
+
+1. Baixe o `.zip` do seu PC:
+   - `InfiniTypes-windows-x64.zip` para a maioria dos PCs, com processador Intel ou AMD.
+   - `InfiniTypes-windows-arm64.zip` para PCs com processador ARM, como o Snapdragon.
+2. Clique com o botão direito no `.zip`, escolha **Extrair tudo** e extraia para uma pasta sua, como `Documentos\InfiniTypes`. Se já tiver uma versão anterior, extraia por cima.
+3. Abra o `InfiniTypes.exe` dentro dessa pasta.
+4. No aviso do SmartScreen, clique em **Mais informações → Executar assim mesmo**. O aviso aparece porque o app ainda não é assinado.
+5. Cole a sua chave da API nas **Preferências**, que abrem sozinhas na primeira vez. Enquanto isso, o app baixa o modelo de voz (cerca de 550 MB).
+6. Para testar, segure o **Ctrl direito**, fale e solte.
+
+O app fica no ícone da área de notificação, perto do relógio. Se o microfone não funcionar, libere-o para apps da área de trabalho em **Configurações → Privacidade e segurança → Microfone**.
+
+### Android (13 ou mais novo)
+
+1. No celular, baixe o `InfiniTypes-android-<versão>.apk` e abra o arquivo.
+2. Permita a instalação de apps desconhecidos quando o Android pedir.
+3. Se já tiver uma versão anterior, desinstale-a antes. O APK ainda tem assinatura de testes, então não instala por cima. Desinstalar apaga a chave da API e o histórico do app.
+4. No app, cole a sua chave da API em **Ajustes**.
+
+Para ditar pelo teclado ou pelo bloco das Configurações Rápidas, veja [`android/README.md`](android/README.md).
+
+### iPhone
+
+Não há pacote: o app é instalado pelo Mac, a partir do código (veja [Compilar o app do iPhone](#compilar-o-app-do-iphone)).
+
+### Problemas comuns
+
+- **Mac: "Conceda as permissões" com o Microfone e a Acessibilidade já ligados.** A permissão de Acessibilidade fica presa à assinatura do app que a recebeu. Em **Ajustes → Privacidade e Segurança → Acessibilidade**, selecione o InfiniTypes, remova com o botão **−** e permita de novo pelo app. Se um build novo for instalado com o app aberto, o app se reabre sozinho no próximo atalho.
+- **Mac: "Não foi possível verificar" ao abrir o app baixado.** Em **Ajustes → Privacidade e Segurança**, clique em **Abrir Mesmo Assim**.
+- **Windows: o SmartScreen bloqueia o app.** O app ainda não é assinado: **Mais informações → Executar assim mesmo**.
+- **Android: o teclado InfiniTypes não aparece.** Ative-o em **Configurações → Sistema → Teclado** (o nome do menu muda de fabricante para fabricante), ou pelo botão **Ativar** nos Ajustes do app.
+
 ## Como funciona
 
 1. **Transcrição local.** A fala vira texto no próprio aparelho: Whisper com o [WhisperKit](https://github.com/argmaxinc/WhisperKit) no Mac e no iPhone, com o [Whisper.net](https://github.com/sandrohanea/whisper.net) no Windows e o reconhecimento offline do próprio Android. O áudio não sai do aparelho.
@@ -52,20 +103,18 @@ A chave fica no cofre de senhas do sistema (Keychain, Gerenciador de Credenciais
 - **Vai para a Anthropic:** o texto transcrito, o glossário do projeto e o contexto da janela (nome do app e título da janela). No modo de revisão, também o texto selecionado. Antes de enviar uma seleção, o app bloqueia textos com chaves e senhas conhecidas.
 - **Permissões do macOS:** o microfone, só enquanto você dita, e a Acessibilidade, para detectar o atalho, ler a seleção e colar o resultado. Detalhes de cada plataforma em [`SECURITY.md`](SECURITY.md).
 
-## Instalar
+## Compilar a partir do código
 
-**Pacotes prontos:** a [última versão](https://github.com/HelioVieiraSilvaJr/InfiniTypes/releases/latest) traz o `.dmg` do Mac, os `.zip` do Windows e o APK do Android, com as instruções de cada um. O iPhone não tem pacote: o app é instalado a partir do código, pelo Mac.
+Para ter a versão mais recente do código, compile você mesmo. A CI também gera pacotes do Windows e do Android a cada commit (aba **Actions** → execução mais recente da plataforma → **Artifacts**; é preciso estar logado no GitHub).
 
-Os pacotes ainda não passam pela verificação da Apple nem da Microsoft, por isso o sistema avisa na primeira abertura (veja [Problemas comuns](#problemas-comuns)). Para ter a versão mais recente do código, compile você mesmo. A CI também gera pacotes do Windows e do Android a cada commit (aba **Actions** → execução mais recente da plataforma → **Artifacts**; é preciso estar logado no GitHub).
-
-Para compilar, primeiro baixe o código:
+Primeiro, baixe o código:
 
 ```bash
 git clone https://github.com/HelioVieiraSilvaJr/InfiniTypes.git
 cd InfiniTypes
 ```
 
-### macOS
+### Compilar o app do Mac
 
 Requer macOS 26, [Xcode 26](https://apps.apple.com/app/xcode/id497799835) e o [XcodeGen](https://github.com/yonaskolb/XcodeGen) (`brew install xcodegen`).
 
@@ -80,7 +129,7 @@ Na primeira abertura, o app pede o **Microfone** e a **Acessibilidade**. Depois,
 
 Para o macOS manter as permissões de um build para o outro, assine com o seu time da Apple (uma conta gratuita serve): veja [Assinatura em `CONTRIBUTING.md`](CONTRIBUTING.md#assinatura). Para instalar em outro Mac, `make dmg` gera o instalador em `apple/dist/`; no outro Mac, a primeira abertura pede **Ajustes → Privacidade e Segurança → Abrir Mesmo Assim**.
 
-### iPhone
+### Compilar o app do iPhone
 
 Requer um Mac com o Xcode 26 e o XcodeGen, um iPhone com iOS 26 e o [Modo de Desenvolvedor](https://developer.apple.com/documentation/xcode/enabling-developer-mode-on-a-device) ligado, e o seu time da Apple em `apple/Config/Signing.local.xcconfig` (veja [Assinatura](CONTRIBUTING.md#assinatura)). Com uma conta gratuita, o app instalado vale por 7 dias; depois, é só instalar de novo.
 
@@ -90,7 +139,7 @@ make ios-run                                     # no simulador
 make ios-device IOS_DEVICE="iPhone de Fulano"    # no aparelho pareado (nome em: xcrun devicectl list devices)
 ```
 
-### Windows
+### Compilar o app do Windows
 
 Requer Windows 10 ou 11. Para compilar, instale o [SDK do .NET 10](https://dotnet.microsoft.com/download) e o Git (`winget install Microsoft.DotNet.SDK.10 Git.Git`) e rode no PowerShell:
 
@@ -102,7 +151,7 @@ dotnet publish src\InfiniTypes -c Release -r win-x64 --self-contained -o publish
 
 O pacote pronto da CI é o `InfiniTypes-windows`, com um `.zip` para x64 e outro para ARM64. Detalhes, SmartScreen e onde ficam os dados: [`windows/README.md`](windows/README.md).
 
-### Android
+### Compilar o app do Android
 
 Requer Android 13 ou mais novo. O pacote pronto da CI é o `InfiniTypes-android`, com o APK. Para compilar, instale o JDK 17 e o [SDK do Android](https://developer.android.com/studio) (o Android Studio já traz os dois) e rode:
 
@@ -114,13 +163,6 @@ adb install app/build/outputs/apk/debug/app-debug.apk         # aparelho com Dep
 ```
 
 Também dá para abrir a pasta `android/` no Android Studio e usar o botão Run. Primeiros passos no aparelho: [`android/README.md`](android/README.md).
-
-### Problemas comuns
-
-- **Mac: "Conceda as permissões" com o Microfone e a Acessibilidade já ligados.** A permissão de Acessibilidade fica presa à assinatura do app que a recebeu. Em **Ajustes → Privacidade e Segurança → Acessibilidade**, selecione o InfiniTypes, remova com o botão **−** e permita de novo pelo app. Se um build novo for instalado com o app aberto, o app se reabre sozinho no próximo atalho.
-- **Mac: "Não foi possível verificar" ao abrir o app baixado.** Em **Ajustes → Privacidade e Segurança**, clique em **Abrir Mesmo Assim**.
-- **Windows: o SmartScreen bloqueia o app.** O app ainda não é assinado: **Mais informações → Executar assim mesmo**.
-- **Android: o teclado InfiniTypes não aparece.** Ative-o em **Configurações → Sistema → Teclado** (o nome do menu muda de fabricante para fabricante), ou pelo botão **Ativar** nos Ajustes do app.
 
 Assinatura, instalador do Mac e notarização: [`CONTRIBUTING.md`](CONTRIBUTING.md) e [`docs/DISTRIBUICAO.md`](docs/DISTRIBUICAO.md).
 
